@@ -6,7 +6,7 @@ const (
 	GetAllUser     = "SELECT id, name, email, role, created_at, updated_at FROM users WHERE deleted_at = null ORDER BY created_at DESC LIMIT $1 OFFSET $2"
 	GetUserByID    = "SELECT id, name, email, password, role, created_at, updated_at FROM users WHERE id = $1 AND deleted_at = null"
 	GetUserByEmail = "SELECT id, name, email, password, role, created_at, updated_at FROM users WHERE email = $1 AND deleted_at = null"
-	CreateUser     = "INSERT INTO users(name, email, password, role) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING id, name, email, password, role, created_at, updated_at"
+	CreateUser     = "INSERT INTO users(name, email, password, role, deleted_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, null) RETURNING id, name, email, password, role, created_at, updated_at"
 	UpdateUser     = "UPDATE users SET name = $2, email = $3, password = $4, role = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at = null RETURNING id, name, email, password, role, created_at, updated_at"
 	CountAllUser   = "SELECT COUNT(*) FROM users WHERE deleted_at = null"
 
@@ -31,11 +31,6 @@ const (
     deleted_at TIMESTAMP,
 
 	GetAllProject = "SELECT id, name, manager_id, deadline, created_at, updated_at FROM projects WHERE deleted_at = null ORDER BY deadline DESC LIMIT $1 OFFSET $2"
-	GetProjectByID = "SELECT id, name, manager_id, deadline, created_at, updated_at FROM projects WHERE deleted_at = null AND id = $1"
-	GetProjectByManagerID = "SELECT id, name, manager_id, deadline, created_at, updated_at FROM projects WHERE deleted_at = null AND manager_id = $1 ORDER BY deadline DESC LIMIT $2 OFFSET $3"
-	GetProjectByDeadline = "SELECT id, name, manager_id, deadline, created_at, updated_at FROM projects WHERE deleted_at = null AND deadline = $1 ORDER BY deadline DESC LIMIT $2 OFFSET $3"
-	CreateProject = "INSERT INTO projects(name, manager_id, deadline, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP)  RETURNING id, name, manager_id, deadline, created_at, updated_at"
-
 
 	SelectTasksByAuthor = "select * from tasks where author_id = $1"
 	CreateTask          = "Insert Into tasks (title, content, author_id, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) RETURNING id, created_at"
