@@ -11,24 +11,24 @@ const (
 	CountAllUser   = "SELECT COUNT(*) FROM users WHERE deleted_at = null"
 
 	//projects
-	GetAll(page int, size int) ([]model.Project, shared_model.Paging, error)
-	GetById(id string) (model.Project, error)
-	GetByDeadline(date time.Time) ([]model.Project, shared_model.Paging, error)
-	GetByManagerId(id string) ([]model.Project, shared_model.Paging, error)
-	GetByMemberId(id string) ([]model.Project, shared_model.Paging, error)
-	CreateProject(payload model.Project) (model.Project, error)
-	EditProjectMember(id string, members []string) ([]model.User, error)
-	GetAllProjectMember(id string) ([]model.User, error)
-	Update(payload model.Project) (model.Project, error)
-	Delete(string string) error
+	// GetAll(page int, size int) ([]model.Project, shared_model.Paging, error)
+	// GetById(id string) (model.Project, error)
+	// GetByDeadline(date time.Time) ([]model.Project, shared_model.Paging, error)
+	// GetByManagerId(id string) ([]model.Project, shared_model.Paging, error)
+	// GetByMemberId(id string) ([]model.Project, shared_model.Paging, error)
+	// CreateProject(payload model.Project) (model.Project, error)
+	// EditProjectMember(id string, members []string) ([]model.User, error)
+	// GetAllProjectMember(id string) ([]model.User, error)
+	// Update(payload model.Project) (model.Project, error)
+	// Delete(string string) error
 
-	id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    manager_id UUID NOT NULL,
-    deadline DATE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL,
-    deleted_at TIMESTAMP,
+	// id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    // name VARCHAR(255) NOT NULL,
+    // manager_id UUID NOT NULL,
+    // deadline DATE NOT NULL,
+    // created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    // updated_at TIMESTAMP NOT NULL,
+    // deleted_at TIMESTAMP,
 
 	GetAllProject = "SELECT id, name, manager_id, deadline, created_at, updated_at FROM projects WHERE deleted_at = null ORDER BY deadline DESC LIMIT $1 OFFSET $2"
 	GetProjectByID = "SELECT id, name, manager_id, deadline, created_at, updated_at FROM projects WHERE deleted_at = null AND id = $1"
