@@ -100,7 +100,7 @@ func (r *reportRepository) GetReportByTaskId(taskId string) ([]model.Report, err
 // UpdateReport implements Report.
 func (r *reportRepository) UpdateReport(payload model.Report) (model.Report, error) {
 	var report model.Report
-	query := "UPDATE reports SET report = $3, task_id = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND user_id = $2 AND deleted_at IS null RETURNING  id, user_id, report, task_id, project_id, created_at, updated_at"
+	query := "UPDATE reports SET report = $3, task_id = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND user_id = $2 AND deleted_at IS null RETURNING  id, user_id, report, task_id, created_at, updated_at"
 	err := r.db.QueryRow(query, payload.Id, payload.User_id, payload.Report, payload.Task_id).Scan(&report.Id, &report.User_id, &report.Report, &report.Task_id, &report.Created_at, &report.Updated_at)
 	if err != nil {
 		log.Println("report_repository.QueryRow", err.Error())
