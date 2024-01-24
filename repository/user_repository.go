@@ -95,6 +95,14 @@ func (u *userRepository) GetById(id string) (model.User, error) {
 		log.Println("user not found", err.Error())
 		return model.User{}, err
 	}
+
+	//isi task
+	if user.Role == "MANAGER" {
+
+	} else if user.Role == "TEAM MEMBER" {
+
+	}
+
 	return user, nil
 }
 
