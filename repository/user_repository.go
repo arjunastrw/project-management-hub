@@ -11,7 +11,7 @@ import (
 )
 
 type User interface {
-	GetAll(page int, size int) ([]model.User, shared_model.Paging, error)
+	GetAll(page int, size int) ([]model.User, shared_model.Paging)
 	GetById(id string) (model.User, error)
 	GetByEmail(email string) (model.User, error)
 	CreateUser(payload model.User) (model.User, error)
