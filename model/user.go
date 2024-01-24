@@ -14,7 +14,3 @@ type User struct {
 	Project   []Project `json:"project"`
 	Task      []Task    `json:"task"`
 }
-
-type AuthService interface {
-	GetUserByID(userID string) (User, error)
-}
