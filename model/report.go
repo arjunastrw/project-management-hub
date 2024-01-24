@@ -7,7 +7,6 @@ type Report struct {
 	User_id    string    `json:"user_id"`
 	Report     string    `json:"report"`
 	Task_id    string    `json:"task_id"`
-	Project_id string    `json:"project_id"`
 	Created_at time.Time `json:"created_at"`
 	Updated_at time.Time `json:"updated_at"`
 	Deleted_at time.Time `json:"deleted_at"`
