@@ -44,7 +44,7 @@ func (r *reportUsecase) CreateReport(payload model.Report) (model.Report, error)
 	// }
 
 	// if payload.Report == "" || payload.Task_id == "" || payload.User_id == "" {
-	// 	log.Fatal("data cannot be empty: %v", payload)
+	// 	log.Println("data cannot be empty: %v", payload)
 	// }
 
 	report, err := r.reportRepository.CreateReport(payload)
