@@ -3,10 +3,10 @@ INSERT INTO users (name, email, password, role, updated_at)
 VALUES 
   ('Admin1', 'admin1@example.com', 'admin1_password', 'ADMIN', CURRENT_TIMESTAMP),
   ('Admin2', 'admin2@example.com', 'admin2_password', 'ADMIN', CURRENT_TIMESTAMP),
-  ('User1', 'user1@example.com', 'user1_password', 'USER', CURRENT_TIMESTAMP),
-  ('User2', 'user2@example.com', 'user2_password', 'USER', CURRENT_TIMESTAMP),
-  ('User3', 'user3@example.com', 'user3_password', 'USER', CURRENT_TIMESTAMP),
-  ('User4', 'user4@example.com', 'user4_password', 'USER', CURRENT_TIMESTAMP);
+  ('User1', 'user1@example.com', 'user1_password', 'MANAGER', CURRENT_TIMESTAMP),
+  ('User2', 'user2@example.com', 'user2_password', 'MANAGER', CURRENT_TIMESTAMP),
+  ('User3', 'user3@example.com', 'user3_password', 'TEAM MEMBER', CURRENT_TIMESTAMP),
+  ('User4', 'user4@example.com', 'user4_password', 'TEAM MEMBER', CURRENT_TIMESTAMP);
 
 --Input Project
 INSERT INTO projects (name, manager_id, deadline, updated_at)

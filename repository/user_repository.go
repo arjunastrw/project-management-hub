@@ -10,7 +10,7 @@ import (
 	"enigma.com/projectmanagementhub/shared/shared_model"
 )
 
-type User interface {
+type UserRepository interface {
 	GetAll(page int, size int) ([]model.User, shared_model.Paging, error)
 	GetById(id string) (model.User, error)
 	GetByEmail(email string) (model.User, error)
@@ -19,12 +19,12 @@ type User interface {
 	Delete(id string) error
 }
 
-type user struct {
+type userRepository struct {
 	db *sql.DB
 }
 
 // Delete implements User.
-func (u *user) Delete(id string) error {
+func (u *userRepository) Delete(id string) error {
 	//to do make query to delete user
 	_, err := u.db.Query(config.DeleteUserById, id)
 	if err != nil {
@@ -36,7 +36,7 @@ func (u *user) Delete(id string) error {
 }
 
 // GetAll implements User.
-func (u *user) GetAll(page int, size int) ([]model.User, shared_model.Paging, error) {
+func (u *userRepository) GetAll(page int, size int) ([]model.User, shared_model.Paging, error) {
 	var users []model.User
 	offset := (page - 1) * size
 	row, err := u.db.Query(config.GetAllUser, size, offset)
@@ -74,7 +74,7 @@ func (u *user) GetAll(page int, size int) ([]model.User, shared_model.Paging, er
 }
 
 // GetByEmail implements User.
-func (u *user) GetByEmail(email string) (model.User, error) {
+func (u *userRepository) GetByEmail(email string) (model.User, error) {
 	var user model.User
 
 	err := u.db.QueryRow(config.GetUserByEmail, email).Scan(&user.Id, &user.Name, &user.Email, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt)
@@ -87,7 +87,7 @@ func (u *user) GetByEmail(email string) (model.User, error) {
 }
 
 // GetById implements User.
-func (u *user) GetById(id string) (model.User, error) {
+func (u *userRepository) GetById(id string) (model.User, error) {
 	var user model.User
 
 	err := u.db.QueryRow(config.GetUserByID, id).Scan(&user.Id, &user.Name, &user.Email, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt)
@@ -95,11 +95,19 @@ func (u *user) GetById(id string) (model.User, error) {
 		log.Println("user not found", err.Error())
 		return model.User{}, err
 	}
+
+	//isi task
+	if user.Role == "MANAGER" {
+
+	} else if user.Role == "TEAM MEMBER" {
+
+	}
+
 	return user, nil
 }
 
 // CreateUser implements User.
-func (u *user) CreateUser(payload model.User) (model.User, error) {
+func (u *userRepository) CreateUser(payload model.User) (model.User, error) {
 	var user model.User
 
 	err := u.db.QueryRow(config.CreateUser, payload).Scan(&user.Id, &user.Name, &user.Email, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt)
@@ -111,7 +119,7 @@ func (u *user) CreateUser(payload model.User) (model.User, error) {
 }
 
 // Update implements User.
-func (u *user) Update(payload model.User) (model.User, error) {
+func (u *userRepository) Update(payload model.User) (model.User, error) {
 	var user model.User
 
 	err := u.db.QueryRow(config.UpdateUser, payload.Id).Scan(&user.Id, &user.Name, &user.Email, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt)
@@ -122,8 +130,8 @@ func (u *user) Update(payload model.User) (model.User, error) {
 	return user, nil
 }
 
-func NewUserRepository(db *sql.DB) User {
-	return &user{
+func NewUserRepository(db *sql.DB) UserRepository {
+	return &userRepository{
 		db: db,
 	}
 }
