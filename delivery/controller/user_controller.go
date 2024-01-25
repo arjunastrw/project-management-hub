@@ -2,7 +2,9 @@ package controller
 
 import (
 	"fmt"
+
 	"net/http"
+	"log"
 	"strconv"
 	"strings"
 
@@ -46,7 +48,7 @@ func (a *UserController) FindAllUser(c *gin.Context) {
 	}
 
 	// Log for Get User Success
-
+	log.Println("Success Get Resource")
 	var resp []interface{}
 
 	for _, v := range users {
@@ -179,17 +181,63 @@ func (a *UserController) UpdateUser(c *gin.Context) {
 		return
 	}
 
+		c.JSON(400, gin.H{
+			"message": "Failed to bind JSON: " + err.Error(),
+		})
+		return
+	}
+
+	// Validate if ID exist
+	existingUser, err := a.userUC.FindUserById(id)
+	if err != nil {
+		// Log if ID not found or Error
+
+		c.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	// Validate If ID notfound
+	if err != nil {
+		common.SendErrorResponse(c, 404, "User with id "+id+" not found")
+		return
+	}
+
+	// Validate If New Email same with another User
+	if updatedUser.Email != existingUser.Email {
+		existingUserByEmail, err := a.userUC.FindUserByEmail(updatedUser.Email)
+		if err != nil {
+			// Log if Email not found or Error
+
+			c.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+			return
+		}
+
+		// Validate If Email already using by another user
+		if existingUser.Email != "" {
+			common.SendErrorResponse(c, 400, " Email "+existingUserByEmail.Email+" already exist")
+			return
+		}
+	}
+
 	// Update User
 	updatedUser, err := a.userUC.UpdateUser(user)
 	if err != nil {
 		// Log For Update User Error
 		common.SendErrorResponse(c, http.StatusInternalServerError, err.Error())
+
+		c.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
 		return
 	}
 
 	// Log For Success
-
 	common.SendSingleResponse(c, updatedUser, "Success")
+	})
 }
 
 func (a *UserController) DeleteUser(c *gin.Context) {

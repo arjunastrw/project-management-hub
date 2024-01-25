@@ -13,10 +13,10 @@ import (
 )
 
 type Server struct {
-	userUC    usecase.UserUseCase
-	taskUC    usecase.TaskUsecase
-	projectUC usecase.ProjectUseCase
-	reportUC  usecase.ReportUsecase
+	userUC usecase.UserUseCase
+	taskUC usecase.TaskUsecase
+	//projectUC usecase.ProjectUsecase
+	reportUC usecase.ReportUsecase
 	//authUC     usecase.AuthUsecase
 	engine *gin.Engine
 	//jwtService service.JwtService
@@ -33,7 +33,7 @@ func (s *Server) Run() {
 func (s *Server) initRoute() {
 	rg := s.engine.Group("/pmh-api/v1")
 	//authMiddleware := middleware.NewAuthMiddleware(s.jwtService)
-	controller.NewUserController(rg, s.userUC /*authMiddleware,*/).Route()
+	controller.NewUserController(rg, s.userUC).Route()
 	controller.NewTaskController(s.taskUC, rg).Route()
 	controller.NewProjectController(s.projectUC, rg).Route()
 	controller.NewReportController(s.reportUC, rg).Route()
@@ -72,12 +72,12 @@ func NewServer() *Server {
 	host := cfg.ApiPort
 
 	return &Server{
-		userUC:    UserUseCase,
-		taskUC:    taskUsecase,
-		projectUC: projectUsecase,
-		reportUC:  reportUsecase,
-		engine:    engine,
-		host:      host,
+		userUC: UserUseCase,
+		taskUC: taskUsecase,
+		//projectUC: projectUsecase,
+		//reportUC: reportUsecase,
+		engine: engine,
+		host:   host,
 		//authUC:     authUsecase,
 		//jwtService: jwtService,
 	}

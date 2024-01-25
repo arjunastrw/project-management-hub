@@ -7,7 +7,6 @@ import (
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/repository"
 	"enigma.com/projectmanagementhub/shared/shared_model"
-	"github.com/sirupsen/logrus"
 )
 
 type UserUseCase interface {
@@ -102,7 +101,7 @@ func (a *userUseCase) CreateUser(payload model.User) (model.User, error) {
 	}
 
 	// Create User Successfully
-
+	log.Printf("Create User Successfully: %+v", user)
 	return user, nil
 }
 
@@ -116,7 +115,6 @@ func (a *userUseCase) UpdateUser(payload model.User) (model.User, error) {
 	if payload.Email != "" {
 		existingUser, _ := a.userRepository.GetByEmail(payload.Email)
 		if existingUser.Id != payload.Id {
-
 			return model.User{}, fmt.Errorf(" Email %s is already exist", payload.Email)
 		}
 	}
