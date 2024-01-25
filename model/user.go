@@ -8,9 +8,9 @@ type User struct {
 	Email     string     `json:"email"`
 	Password  string     `json:"password"`
 	Role      string     `json:"role"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	DeletedAt *time.Time `json:"deleted_at"`
+	CreatedAt time.Time  `json:"-"`
+	UpdatedAt time.Time  `json:"-"`
+	DeletedAt *time.Time `json:"-"`
 	Project   []Project  `json:"project"`
 	Task      []Task     `json:"task"`
 }

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"math"
-	"time"
 
 	"enigma.com/projectmanagementhub/config"
 	"enigma.com/projectmanagementhub/model"
@@ -14,7 +13,7 @@ import (
 type ProjectRepository interface {
 	GetAll(page int, size int) ([]model.Project, shared_model.Paging, error)
 	GetById(id string) (model.Project, error)
-	GetByDeadline(date time.Time) ([]model.Project, error)
+	GetByDeadline(date string) ([]model.Project, error)
 	GetByManagerId(id string) ([]model.Project, error)
 	GetByMemberId(id string) ([]model.Project, error)
 	CreateProject(payload model.Project) (model.Project, error)
@@ -32,30 +31,14 @@ type projectRepository struct {
 // DeleteProjectMember implements ProjectRepository.
 func (p *projectRepository) DeleteProjectMember(id string, members []string) error {
 
-	row, err := p.db.Query(config.GetAllProjectMember, id)
-	if err != nil {
-		log.Println("project_repository.Query", err.Error())
-		return err
-	}
+	for _, member := range members {
 
-	for row.Next() {
-		var memberid string
-		//updated_at cannot be nil
-		err1 := row.Scan(&memberid)
-		if err1 != nil {
-			log.Println("projectRepository.Rows.Next", err1.Error())
-			return err1
+		_, err := p.db.Query(config.DeleteProjectMember, member, id)
+		if err != nil {
+			log.Println("project_repository.Query", err.Error())
+			return err
 		}
 
-		for _, member := range members {
-			if member == memberid {
-				_, err := p.db.Query(config.DeleteProjectMember, memberid, id)
-				if err != nil {
-					log.Println("project_repository.Query", err.Error())
-					return err
-				}
-			}
-		}
 	}
 
 	return nil
@@ -65,7 +48,7 @@ func (p *projectRepository) DeleteProjectMember(id string, members []string) err
 func (p *projectRepository) CreateProject(payload model.Project) (model.Project, error) {
 	var project model.Project
 
-	err := p.db.QueryRow(config.CreateProject, payload).Scan(&project.Id, &project.Name, &project.ManagerId, &project.Deadline, &project.CreatedAt, &project.UpdatedAt)
+	err := p.db.QueryRow(config.CreateProject, payload.Name, payload.ManagerId, payload.Deadline).Scan(&project.Id, &project.Name, &project.ManagerId, &project.Deadline, &project.CreatedAt, &project.UpdatedAt)
 	if err != nil {
 		log.Println("project_repository.QueryRow", err.Error())
 		return model.Project{}, err
@@ -86,36 +69,9 @@ func (p *projectRepository) Delete(id string) error {
 
 // AddProjectMember implements ProjectRepository.
 func (p *projectRepository) AddProjectMember(id string, members []string) error {
-	var memberids []string
-	row, err := p.db.Query(config.GetAllProjectMember, id)
-	if err != nil {
-		log.Println("project_repository.Query", err.Error())
-		return err
-	}
-
-	for row.Next() {
-		var memberid string
-		//updated_at cannot be nil
-		err1 := row.Scan(&memberid)
-		if err1 != nil {
-			log.Println("projectRepository.Rows.Next", err1.Error())
-			return err1
-		}
-
-		memberids = append(memberids, memberid)
-	}
-
-	for _, memberid := range memberids {
-		for _, member := range members {
-			if memberid == member {
-				log.Println("some members are already registered to the project team ", err.Error())
-				return err
-			}
-		}
-	}
 
 	for _, member := range members {
-		_, err := p.db.Query(config.AddProjectMember, id, member)
+		_, err := p.db.Query(config.AddProjectMember, member, id)
 		if err != nil {
 			log.Println("project_repository.Query", err.Error())
 			return err
@@ -197,7 +153,7 @@ func (p *projectRepository) GetAllProjectMember(id string) ([]model.User, error)
 }
 
 // GetByDeadline implements ProjectRepository.
-func (p *projectRepository) GetByDeadline(date time.Time) ([]model.Project, error) {
+func (p *projectRepository) GetByDeadline(date string) ([]model.Project, error) {
 	var projects []model.Project
 	row, err := p.db.Query(config.GetProjectByDeadline, date)
 	if err != nil {
@@ -208,7 +164,7 @@ func (p *projectRepository) GetByDeadline(date time.Time) ([]model.Project, erro
 	for row.Next() {
 		project := model.Project{}
 		//updated_at cannot be nil
-		err := row.Scan(&project.Id, &project.Name, &project.Deadline, &project.CreatedAt, &project.UpdatedAt)
+		err := row.Scan(&project.Id, &project.Name, &project.ManagerId, &project.Deadline, &project.CreatedAt, &project.UpdatedAt)
 		if err != nil {
 			log.Println("projectRepository.Rows.Next", err.Error())
 			return nil, err
@@ -224,7 +180,7 @@ func (p *projectRepository) GetByDeadline(date time.Time) ([]model.Project, erro
 func (p *projectRepository) GetById(id string) (model.Project, error) {
 	var project model.Project
 
-	err := p.db.QueryRow(config.GetProjectByID, id).Scan(&project.Id, &project.Name, &project.Deadline, &project.CreatedAt, &project.UpdatedAt)
+	err := p.db.QueryRow(config.GetProjectByID, id).Scan(&project.Id, &project.Name, &project.ManagerId, &project.Deadline, &project.CreatedAt, &project.UpdatedAt)
 	if err != nil {
 		log.Println("project_repository.QueryRow", err.Error())
 		return model.Project{}, err
@@ -244,7 +200,7 @@ func (p *projectRepository) GetByManagerId(id string) ([]model.Project, error) {
 	for row.Next() {
 		project := model.Project{}
 		//updated_at cannot be nil
-		err := row.Scan(&project.Id, &project.Name, &project.Deadline, &project.CreatedAt, &project.UpdatedAt)
+		err := row.Scan(&project.Id, &project.Name, &project.ManagerId, &project.Deadline, &project.CreatedAt, &project.UpdatedAt)
 		if err != nil {
 			log.Println("projectRepository.Rows.Next", err.Error())
 			return nil, err
@@ -267,8 +223,14 @@ func (p *projectRepository) GetByMemberId(id string) ([]model.Project, error) {
 
 	for row.Next() {
 		project := model.Project{}
+		var id string
 		//updated_at cannot be nil
-		err := row.Scan(&project.Id, &project.Name, &project.Deadline, &project.CreatedAt, &project.UpdatedAt)
+		err := row.Scan(&id)
+		if err != nil {
+			log.Println("projectRepository.Rows.Next", err.Error())
+			return nil, err
+		}
+		err = p.db.QueryRow(config.GetProjectByID, id).Scan(&project.Id, &project.Name, &project.ManagerId, &project.Deadline, &project.CreatedAt, &project.UpdatedAt)
 		if err != nil {
 			log.Println("projectRepository.Rows.Next", err.Error())
 			return nil, err
@@ -284,7 +246,7 @@ func (p *projectRepository) GetByMemberId(id string) ([]model.Project, error) {
 func (p *projectRepository) Update(payload model.Project) (model.Project, error) {
 	var project model.Project
 
-	err := p.db.QueryRow(config.UpdateProject, payload.Id).Scan(&project.Id, &project.Name, &project.Deadline, &project.CreatedAt, &project.UpdatedAt)
+	err := p.db.QueryRow(config.UpdateProject, payload.Id, payload.Name, payload.ManagerId, payload.Deadline).Scan(&project.Id, &project.Name, &project.ManagerId, &project.Deadline, &project.CreatedAt, &project.UpdatedAt)
 	if err != nil {
 		log.Println("user_repository.QueryRow", err.Error())
 		return model.Project{}, err
