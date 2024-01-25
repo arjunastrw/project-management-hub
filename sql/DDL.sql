@@ -30,7 +30,7 @@ CREATE TABLE projects (
 
 
 CREATE TABLE project_members (
-    member_id UUID NOt NULL,
+    member_id UUID NOT NULL,
     project_id UUID NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP,

@@ -75,7 +75,7 @@ func (t *taskRepository) CreateTask(payload model.Task) (model.Task, error) {
 
 	var task model.Task
 
-	err := t.db.QueryRow(config.CreateTask, payload.Id, payload.PersonInCharge, payload.Deadline, payload.ProjectId).Scan(&task.Id, &task.Name, &task.PersonInCharge, &task.Deadline, &task.ProjectId, &task.CreatedAt)
+	err := t.db.QueryRow(config.CreateTask, payload.Name, payload.PersonInCharge, payload.Deadline, payload.ProjectId).Scan(&task.Id, &task.Name, &task.PersonInCharge, &task.Deadline, &task.ProjectId, &task.CreatedAt)
 	if err != nil {
 		log.Println("task_repository.QueryRow", err.Error())
 		return model.Task{}, err

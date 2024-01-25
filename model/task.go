@@ -11,8 +11,8 @@ type Task struct {
 	Feedback       string     `json:"feedback"`
 	PersonInCharge string     `json:"person_in_charge"`
 	ProjectId      string     `json:"project_id"`
-	Deadline       time.Time  `json:"deadline"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
-	DeletedAt      *time.Time `json:"deleted_at"`
+	Deadline       string     `json:"deadline"`
+	CreatedAt      time.Time  `json:"-"`
+	UpdatedAt      time.Time  `json:"-"`
+	DeletedAt      *time.Time `json:"-"`
 }

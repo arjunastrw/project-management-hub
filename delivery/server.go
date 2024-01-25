@@ -14,8 +14,8 @@ import (
 
 type Server struct {
 	//userUC    usecase.UserUseCase
-	taskUC usecase.TaskUsecase
-	//projectUC usecase.ProjectUsecase
+	taskUC    usecase.TaskUsecase
+	projectUC usecase.ProjectUseCase
 	//reportUC  usecase.ReportUsecase
 	//authUC     usecase.AuthUsecase
 	engine *gin.Engine
@@ -35,7 +35,7 @@ func (s *Server) initRoute() {
 	//authMiddleware := middleware.NewAuthMiddleware(s.jwtService)
 	//controller.NewUserController(s.userUC /*authMiddleware,*/, rg).Route()
 	controller.NewTaskController(s.taskUC, rg).Route()
-	//controller.NewProjectController(s.projectUC, rg).Route()
+	controller.NewProjectController(s.projectUC, rg).Route()
 	//controller.NewReportController(s.reportUC, rg).Route()
 	//controller.NewAuthController(s.authUC, rg).Route()
 }
@@ -56,13 +56,13 @@ func NewServer() *Server {
 	//inject db ke repository
 	taskRepository := repository.NewTaskRepository(db)
 	//userRepository := repository.NewUserRepository(db)
-	//projectRepository := repository.NewProjectRepository(db)
+	projectRepository := repository.NewProjectRepository(db)
 	//reportRepository := repository.NewReportRepository(db)
 
 	//inject repository ke usecase
 	//UserUseCase := usecase.NewUserUseCase(userRepository)
 	taskUsecase := usecase.NewTaskUsecase(taskRepository)
-	//projectUsecase := usecase.NewProjectUseCase(projectRepository)
+	projectUsecase := usecase.NewProjectUseCase(projectRepository)
 	//reportUsecase := usecase.NewReportUseCase(reportRepository)
 
 	//jwtService := service.NewJwtService(cfg.TokenConfig)
@@ -73,8 +73,8 @@ func NewServer() *Server {
 
 	return &Server{
 		//userUC:    UserUseCase,
-		taskUC: taskUsecase,
-		//projectUC: projectUsecase,
+		taskUC:    taskUsecase,
+		projectUC: projectUsecase,
 		//reportUC:  reportUsecase,
 		engine: engine,
 		host:   host,

@@ -1,15 +1,15 @@
 package usecase
 
 import (
+	"fmt"
+
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/repository"
 	"enigma.com/projectmanagementhub/shared/shared_model"
-	"fmt"
-	"github.com/sirupsen/logrus"
 )
 
 type UserUseCase interface {
-	FindAllUser(page int, size int) ([]model.User, shared_model.Paging)
+	FindAllUser(page int, size int) ([]model.User, shared_model.Paging, error)
 	FindUserById(id string) (model.User, error)
 	FindUserByEmail(email string) (model.User, error)
 	CreateUser(payload model.User) (model.User, error)
@@ -19,7 +19,6 @@ type UserUseCase interface {
 
 type userUseCase struct {
 	userRepository repository.UserRepository
-	logger         *logrus.Logger
 }
 
 func (a *userUseCase) FindAllUser(page int, size int) ([]model.User, shared_model.Paging, error) {
@@ -32,10 +31,9 @@ func (a *userUseCase) FindAllUser(page int, size int) ([]model.User, shared_mode
 	users, paging, err := a.userRepository.GetAll(page, size)
 	if err != nil {
 		return []model.User{}, shared_model.Paging{}, err
-		a.logger.Error(err)
+
 	}
 
-	a.logger.Infof("Get All User Successfully")
 	return users, paging, nil
 }
 
@@ -47,12 +45,11 @@ func (a *userUseCase) FindUserById(id string) (model.User, error) {
 
 	// Check if user is not found
 	if user.Id == "" {
-		a.logger.Warnf("User with ID %s not found", id)
+
 		return model.User{}, fmt.Errorf(" User with ID %s not found", id)
 	}
 
 	// User successfully found By ID
-	a.logger.Infof("User with ID %s found successfully", id)
 
 	return user, nil
 }
@@ -70,12 +67,12 @@ func (a *userUseCase) FindUserByEmail(email string) (model.User, error) {
 	}
 	// Check if user not found
 	if user.Email == "" {
-		a.logger.Warnf("User with email %s not found", email)
+
 		return model.User{}, fmt.Errorf(" User with email %s not found", email)
 	}
 
 	// User successfully found By Email
-	a.logger.Infof("User with Email %s found successfully", email)
+
 	return user, nil
 }
 
@@ -93,7 +90,7 @@ func (a *userUseCase) CreateUser(payload model.User) (model.User, error) {
 	}
 
 	if existingUser.Email != "" {
-		a.logger.Warnf("Email %s is already exist", payload.Email)
+
 		return model.User{}, fmt.Errorf(" Email %s is already exist", payload.Email)
 	}
 
@@ -104,7 +101,7 @@ func (a *userUseCase) CreateUser(payload model.User) (model.User, error) {
 	}
 
 	// Create User Successfully
-	a.logger.Infof(" Create User Sucessfully", payload)
+
 	fmt.Println("Create User Successfully", payload)
 	return user, nil
 }
@@ -123,7 +120,7 @@ func (a *userUseCase) UpdateUser(payload model.User) (model.User, error) {
 		}
 
 		if existingUser.Email != "" {
-			a.logger.Warnf("Email %s is already exist", payload.Email)
+
 			return model.User{}, fmt.Errorf(" Email %s is already exist", payload.Email)
 		}
 	}
@@ -135,7 +132,7 @@ func (a *userUseCase) UpdateUser(payload model.User) (model.User, error) {
 	}
 
 	// Update User Successfully
-	a.logger.Infof("Update User Successfully")
+
 	return user, nil
 }
 
@@ -152,13 +149,12 @@ func (a *userUseCase) DeleteUser(id string) error {
 	}
 
 	// Delete User Successfully
-	a.logger.Infof("Delete User %s Successfully", id)
+
 	return nil
 }
 
 func NewUserUseCase(userRepository repository.UserRepository) UserUseCase {
 	return &userUseCase{
 		userRepository: userRepository,
-		logger:         logrus.New(),
 	}
 }

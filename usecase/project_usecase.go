@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"time"
 
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/repository"
@@ -14,7 +13,7 @@ import (
 type ProjectUseCase interface {
 	GetAll(page int, size int) ([]model.Project, shared_model.Paging, error)
 	GetProjectById(id string) (model.Project, error)
-	GetProjectsByDeadline(date time.Time) ([]model.Project, error)
+	GetProjectsByDeadline(date string) ([]model.Project, error)
 	GetProjectsByManagerId(id string) ([]model.Project, error)
 	GetProjectsByMemberId(id string) ([]model.Project, error)
 	CreateNewProject(payload model.Project) (model.Project, error)
@@ -48,22 +47,7 @@ func (uc *projectUseCase) GetAll(page int, size int) ([]model.Project, shared_mo
 		return nil, shared_model.Paging{}, errors.New(errorMessage)
 	}
 
-	projectList := make([]model.Project, len(projects))
-	for i, project := range projects {
-		projectList[i] = model.Project{
-			Id:        project.Id,
-			Name:      project.Name,
-			ManagerId: project.ManagerId,
-			Deadline:  project.Deadline,
-			CreatedAt: project.CreatedAt,
-			UpdatedAt: project.UpdatedAt,
-			DeletedAt: project.DeletedAt,
-			Members:   project.Members,
-			Tasks:     project.Tasks,
-		}
-	}
-
-	return projectList, paging, nil
+	return projects, paging, nil
 }
 
 func (uc *projectUseCase) GetProjectById(id string) (model.Project, error) {
@@ -81,7 +65,7 @@ func (uc *projectUseCase) GetProjectById(id string) (model.Project, error) {
 	return project, nil
 }
 
-func (uc *projectUseCase) GetProjectsByDeadline(date time.Time) ([]model.Project, error) {
+func (uc *projectUseCase) GetProjectsByDeadline(date string) ([]model.Project, error) {
 	//// validate
 	//if strings.ToLower(user.Role) != "admin" {
 	//	return nil, shared_model.Paging{}, errors.New("Unauthorized access")
@@ -93,7 +77,7 @@ func (uc *projectUseCase) GetProjectsByDeadline(date time.Time) ([]model.Project
 		return nil, errors.New(errorMessage)
 	}
 
-	successMessage := fmt.Sprintf("Successfully retrieved projects with deadline %s", date.String())
+	successMessage := fmt.Sprintf("Successfully retrieved projects with deadline %s", date)
 	log.Printf("INFO: %s", successMessage)
 
 	if len(projects) == 0 {
@@ -140,7 +124,7 @@ func (uc *projectUseCase) GetProjectsByMemberId(id string) ([]model.Project, err
 	projects, err := uc.projectRepo.GetByMemberId(id)
 	if err != nil {
 
-		errorMessage := fmt.Sprintf("Failed to get projects by MaemberId: %s", err.Error())
+		errorMessage := fmt.Sprintf("Failed to get projects by MemberId: %s", err.Error())
 		log.Printf("ERROR: %s", errorMessage)
 		return nil, errors.New(errorMessage)
 	}
@@ -158,8 +142,8 @@ func (uc *projectUseCase) CreateNewProject(payload model.Project) (model.Project
 	// 	return nil, errors.New("Unauthorized access")
 	// }
 
-	if payload.Name == "" || payload.ManagerId == "" || payload.Deadline.IsZero() || len(payload.Members) == 0 || len(payload.Tasks) == 0 {
-		errorMessage := "Fields 'name', 'manager id', 'deadline', 'members', and 'tasks' cannot be empty"
+	if payload.Name == "" || payload.ManagerId == "" || payload.Deadline == "" {
+		errorMessage := " Fields 'name', 'manager id', 'deadline' cannot be empty"
 		log.Printf("ERROR: %s", errorMessage)
 		return model.Project{}, errors.New(errorMessage)
 	}
