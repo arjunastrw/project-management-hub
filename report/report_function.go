@@ -21,7 +21,7 @@ type reportToTXT struct {
 func (r *reportToTXT) WriteReport(report model.ShowReport) error {
 	// Membuat nama file dengan format "YYYY-MM-DD_HH-MM-SS.txt" di dalam folder
 	folderPath := "D:/Final_project_enigma/project-management-hub/report/report_result"
-	fileName := filepath.Join(folderPath, time.Now().Format("2006-01-02_15-04-05")+".txt")
+	fileName := filepath.Join(folderPath, time.Now().Format("2006-01-02")+".txt")
 
 	// Membuat folder jika belum ada
 	if err := os.MkdirAll(folderPath, os.ModePerm); err != nil {
