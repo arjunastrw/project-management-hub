@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"math"
-	"slices"
 	"time"
 
 	"enigma.com/projectmanagementhub/config"
@@ -48,11 +47,13 @@ func (p *projectRepository) DeleteProjectMember(id string, members []string) err
 			return err1
 		}
 
-		if slices.Contains(members, memberid) {
-			_, err := p.db.Query(config.DeleteProjectMember, memberid, id)
-			if err != nil {
-				log.Println("project_repository.Query", err.Error())
-				return err
+		for _, member := range members {
+			if member == memberid {
+				_, err := p.db.Query(config.DeleteProjectMember, memberid, id)
+				if err != nil {
+					log.Println("project_repository.Query", err.Error())
+					return err
+				}
 			}
 		}
 	}
@@ -85,7 +86,7 @@ func (p *projectRepository) Delete(id string) error {
 
 // AddProjectMember implements ProjectRepository.
 func (p *projectRepository) AddProjectMember(id string, members []string) error {
-
+	var memberids []string
 	row, err := p.db.Query(config.GetAllProjectMember, id)
 	if err != nil {
 		log.Println("project_repository.Query", err.Error())
@@ -101,12 +102,23 @@ func (p *projectRepository) AddProjectMember(id string, members []string) error 
 			return err1
 		}
 
-		if !slices.Contains(members, memberid) {
-			_, err := p.db.Query(config.AddProjectMember, memberid, id)
-			if err != nil {
-				log.Println("project_repository.Query", err.Error())
+		memberids = append(memberids, memberid)
+	}
+
+	for _, memberid := range memberids {
+		for _, member := range members {
+			if memberid == member {
+				log.Println("some members are already registered to the project team ", err.Error())
 				return err
 			}
+		}
+	}
+
+	for _, member := range members {
+		_, err := p.db.Query(config.AddProjectMember, id, member)
+		if err != nil {
+			log.Println("project_repository.Query", err.Error())
+			return err
 		}
 	}
 
