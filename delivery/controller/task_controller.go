@@ -24,10 +24,10 @@ func NewTaskController(taskUC usecase.TaskUsecase, rg *gin.RouterGroup) *TaskCon
 
 // update ini
 func (t *TaskController) Route() {
-	t.rg.GET("/tasks/list", t.GetAllTask)
+	/*done*/ t.rg.GET("/tasks/list", t.GetAllTask)
 	t.rg.GET("/tasks/getbypic/:id", t.GetTaskByPersonInCharge)
 	t.rg.GET("/tasks/getbyid/:id", t.GetTaskById)
-	t.rg.GET("/tasks/getbyprojectid/:id", t.GetTaskByProjectId)
+	/*done*/ t.rg.GET("/tasks/getbyprojectid/:id", t.GetTaskByProjectId)
 	t.rg.POST("/tasks/create", t.CreateTask)
 	t.rg.PUT("/tasks/update", t.UpdateTask)
 	t.rg.DELETE("/tasks/delete/:id", t.DeleteTask)
