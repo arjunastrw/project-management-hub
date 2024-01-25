@@ -11,3 +11,8 @@ type Report struct {
 	Updated_at time.Time  `json:"-"`
 	DeletedAt  *time.Time `json:"-"`
 }
+
+type ShowReport struct {
+	Date    time.Time
+	Content Report
+}
