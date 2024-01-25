@@ -2,6 +2,8 @@ package controller
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/shared/common"
@@ -22,29 +24,35 @@ func NewUserController(rg *gin.RouterGroup, userUC usecase.UserUseCase) *UserCon
 }
 
 func (a *UserController) Route() {
-	a.rg.GET("api/users", a.FindAllUser)
-	a.rg.GET("api/user/:id", a.FindUserById)
-	a.rg.GET("api/email/:email", a.FindUserByEmail)
-	a.rg.POST("api/users", a.CreateUser)
-	a.rg.PUT("api/user/:id", a.UpdateUser)
-	a.rg.DELETE("api/user/:id", a.DeleteUser)
+	a.rg.GET("/users/list", a.FindAllUser)
+	a.rg.GET("/user/:id", a.FindUserById)
+	a.rg.GET("/user/email/:email", a.FindUserByEmail)
+	a.rg.POST("/users", a.CreateUser)
+	a.rg.PUT("/user/:id", a.UpdateUser)
+	a.rg.DELETE("/user/:id", a.DeleteUser)
 }
 
 func (a *UserController) FindAllUser(c *gin.Context) {
-	id := c.Param("id")
-	user, err := a.userUC.FindUserById(id)
+	// Get parameters from query
+	page, _ := strconv.Atoi(c.Query("page"))
+	size, _ := strconv.Atoi(c.Query("size"))
+
+	// Call FindAllUser method
+	users, paging, err := a.userUC.FindAllUser(page, size)
 	if err != nil {
-		common.SendErrorResponse(c, 400, "tasks id "+id+" not found")
+		common.SendErrorResponse(c, 400, "Failed to get users")
 		return
 	}
-	// Log For Success
 
-	// Return For Success
-	c.JSON(200, gin.H{
-		"code":    200,
-		"message": "Success Get Resource",
-		"data":    user,
-	})
+	// Log for Get User Success
+	a.logger.Infof("Success Get Resource")
+
+	var resp []interface{}
+
+	for _, v := range users {
+		resp = append(resp, v)
+	}
+	common.SendPagedResponse(c, resp, paging, "OK")
 }
 
 func (a *UserController) FindUserById(c *gin.Context) {
@@ -88,55 +96,76 @@ func (a *UserController) FindUserByEmail(c *gin.Context) {
 }
 
 func (a *UserController) CreateUser(c *gin.Context) {
-	// Bind JSON request to User Model
-	user := model.User{}
-	err := c.ShouldBindJSON(&user)
+	var newuser model.User
+	if err := c.ShouldBind(&newuser); err != nil {
+		common.SendErrorResponse(c, 400, err.Error())
+		return
+	}
+
+	user, err := a.userUC.CreateUser(newuser)
 	if err != nil {
-		// Log For Bad Request
+		if strings.Contains(err.Error(), "Email already exist") {
+			common.SendErrorResponse(c, 400, "Email already exists")
+			return
+		}
 
-		c.JSON(400, gin.H{
-			"message": "Failed to bind JSON: " + err.Error(),
-		})
+		common.SendErrorResponse(c, 500, err.Error())
 		return
 	}
 
-	email := c.Param("email")
-	// Check If Email Already Exist
-	existingUser, err := a.userUC.FindUserByEmail(email)
-	if err != nil {
-		// Log for Checking Existing User Error or Bad Request
-
-		c.JSON(500, gin.H{
-			"message": "Internal Server Error",
-		})
-		return
-	}
-
-	// Check if Email Already Exist Return Message error Bad Request
-	if existingUser.Email != "" {
-		common.SendErrorResponse(c, 400, "Email "+email+" already exist")
-		return
-	}
-
-	// If Email Not Exist Create New User
-	newUser, err := a.userUC.CreateUser(user)
-	if err != nil {
-		// Log For Create User Error
-
-		c.JSON(500, gin.H{
-			"message": "Internal Server Error",
-		})
-		return
-	}
-
-	// Log For Success
-
-	c.JSON(201, gin.H{
-		"code":    201,
-		"message": "User created successfully",
-		"data":    newUser,
-	})
+	common.SendSingleResponse(c, user, "Success")
 }
+
+// func (a *UserController) CreateUser(c *gin.Context) {
+// 	// Bind JSON request to User Model
+// 	user := model.User{}
+// 	err := c.ShouldBindJSON(&user)
+// 	if err != nil {
+// 		// Log For Bad Request
+// 		logrus.Errorf("Failed to bind JSON: %s", err.Error())
+// 		c.JSON(400, gin.H{
+// 			"message": "Failed to bind JSON: " + err.Error(),
+// 		})
+// 		return
+// 	}
+
+// 	email := c.Param("email")
+// 	// Check If Email Already Exist
+// 	existingUser, err := a.userUC.FindUserByEmail(email)
+// 	if err != nil {
+// 		// Log for Checking Existing User Error or Bad Request
+// 		logrus.Errorf("Failed to check existing user: %s", err.Error())
+// 		c.JSON(500, gin.H{
+// 			"message": "Internal Server Error",
+// 		})
+// 		return
+// 	}
+
+// 	// Check if Email Already Exist Return Message error Bad Request
+// 	if existingUser.Email != "" {
+// 		common.SendErrorResponse(c, 400, "Email "+email+" already exist")
+// 		return
+// 	}
+
+// 	// If Email Not Exist Create New User
+// 	newUser, err := a.userUC.CreateUser(user)
+// 	if err != nil {
+// 		// Log For Create User Error
+// 		logrus.Errorf("Failed to create user: %s", err.Error())
+// 		c.JSON(500, gin.H{
+// 			"message": "Internal Server Error",
+// 		})
+// 		return
+// 	}
+
+// 	// Log For Success
+// 	logrus.Infof("User created successfully")
+// 	c.JSON(201, gin.H{
+// 		"code":    201,
+// 		"message": "User created successfully",
+// 		"data":    newUser,
+// 	})
+// }
 
 func (a *UserController) UpdateUser(c *gin.Context) {
 	// Get ID from URL parameter
