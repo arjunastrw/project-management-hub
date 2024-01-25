@@ -1,10 +1,11 @@
 package usecase
 
 import (
+	"fmt"
+
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/repository"
 	"enigma.com/projectmanagementhub/shared/shared_model"
-	"fmt"
 	"github.com/sirupsen/logrus"
 )
 
@@ -32,7 +33,6 @@ func (a *userUseCase) FindAllUser(page int, size int) ([]model.User, shared_mode
 	users, paging, err := a.userRepository.GetAll(page, size)
 	if err != nil {
 		return []model.User{}, shared_model.Paging{}, err
-		a.logger.Error(err)
 	}
 
 	a.logger.Infof("Get All User Successfully")
@@ -104,8 +104,7 @@ func (a *userUseCase) CreateUser(payload model.User) (model.User, error) {
 	}
 
 	// Create User Successfully
-	a.logger.Infof(" Create User Sucessfully", payload)
-	fmt.Println("Create User Successfully", payload)
+	a.logger.Infof("Create User Successfully: %+v", user)
 	return user, nil
 }
 
