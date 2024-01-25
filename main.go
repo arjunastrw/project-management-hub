@@ -1,7 +1,7 @@
 package main
 
 import (
-	delivery ""
+	delivery "enigma.com/projectmanagementhub/delivery"
 
 	_ "github.com/lib/pq"
 )

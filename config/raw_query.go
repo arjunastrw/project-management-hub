@@ -25,11 +25,14 @@ const (
 	GetAllProjectByMemberID = "SELECT project_id FROM project_members WHERE member_id = $1 AND deleted_at IS NULL"
 	DeleteProjectMember     = "UPDATE project_members SET deleted_at = CURRENT_TIMESTAMP WHERE member_id = $1 AND project_id = $2"
 
-	SelectTasksByAuthor = "select * from tasks where author_id = $1"
-	CreateTask          = "Insert Into tasks (title, content, author_id, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) RETURNING id, created_at"
-	SelectAllTasks      = "SELECT * FROM tasks ORDER BY created_at DESC LIMIT $1 OFFSET $2"
-	CountAllTasks       = "SELECT COUNT(*) FROM tasks"
-	GetTaskById         = "SELECT * FROM tasks WHERE id = $1"
-	UpdateTaskById      = "UPDATE tasks SET title = $2, content = $3, updated_at = CURRENT_TIMESTAMP WHERE ID = $1 RETURNING id, author_id, created_at, updated_at"
-	DeleteTask          = "DELETE FROM tasks WHERE id = $1"
+	//tasks
+	GetAllTask              = "SELECT id, name, status, approval, person_in_charge, deadline, project_id, approval_date, CASE WHEN feedback IS NULL THEN '-' ELSE feedback END, created_at, updated_at FROM tasks WHERE deleted_at IS NULL ORDER BY deadline DESC LIMIT $1 OFFSET $2"
+	CountAllTask            = "SELECT COUNT(*) FROM tasks WHERE deleted_at IS NULL"
+	GetTaskById             = "SELECT id, name, status, approval, person_in_charge, deadline, project_id, approval_date, CASE WHEN feedback IS NULL THEN '-' ELSE feedback END, created_at, updated_at FROM tasks WHERE id = $1 AND deleted_at IS NULL"
+	GetTaskByPersonInCharge = "SELECT id, name, status, approval, person_in_charge, deadline, project_id, approval_date, CASE WHEN feedback IS NULL THEN '-' ELSE feedback END, created_at, updated_at FROM tasks WHERE person_in_charge=$1 AND deleted_at IS NULL"
+	GetTaskByProjectId      = "SELECT id, name, status, approval, person_in_charge, deadline, project_id, approval_date, CASE WHEN feedback IS NULL THEN '-' ELSE feedback END, created_at, updated_at FROM tasks WHERE project_id=$1 AND deleted_at IS NULL"
+	CreateTask              = "INSERT INTO tasks(name, status, approval, person_in_charge, deadline, project_id, updated_at) VALUES ($1, 'In Progress', false, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING id, name, person_in_charge, deadline, project_id, created_at"
+	UpdateTaskByManager     = "UPDATE tasks SET name = $2, status = $3, approval = $4, person_in_charge = $5, deadline = $6, approval_date = CURRENT_TIMESTAMP, feedback = $7, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND AND deleted_at IS NULL id, name, status, approval, person_in_charge, deadline, project_id, approval_date, CASE WHEN feedback IS NULL THEN '-' ELSE feedback END, created_at, updated_at"
+	UpdateTaskByMember      = "UPDATE tasks status = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND person_in_charge = $2 AND deleted_at IS NULL id, name, status, approval, person_in_charge, deadline, project_id, approval_date, CASE WHEN feedback IS NULL THEN '-' ELSE feedback END, created_at, updated_at"
+	DeleteTask              = "UPDATE tasks SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL"
 )
