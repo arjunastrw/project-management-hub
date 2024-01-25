@@ -9,7 +9,7 @@ import (
 )
 
 type UserUseCase interface {
-	FindAllUser(page int, size int) ([]model.User, shared_model.Paging, error)
+	FindAllUser(page int, size int) ([]model.User, shared_model.Paging)
 	FindUserById(id string) (model.User, error)
 	FindUserByEmail(email string) (model.User, error)
 	CreateUser(payload model.User) (model.User, error)
