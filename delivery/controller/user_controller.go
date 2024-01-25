@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -9,13 +10,11 @@ import (
 	"enigma.com/projectmanagementhub/shared/common"
 	"enigma.com/projectmanagementhub/usecase"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 )
 
 type UserController struct {
 	userUC usecase.UserUseCase
 	rg     *gin.RouterGroup
-	logger *logrus.Logger
 }
 
 func NewUserController(rg *gin.RouterGroup, userUC usecase.UserUseCase) *UserController {
@@ -47,7 +46,7 @@ func (a *UserController) FindAllUser(c *gin.Context) {
 	}
 
 	// Log for Get User Success
-	a.logger.Infof("Success Get Resource")
+	log.Println("Success Get Resource")
 
 	var resp []interface{}
 
@@ -62,7 +61,7 @@ func (a *UserController) FindUserById(c *gin.Context) {
 	user, err := a.userUC.FindUserById(id)
 	if err != nil {
 		// Log For Error
-		logrus.Errorf("Failed Get Resource" + err.Error())
+
 		// Return If Condition Error
 		c.JSON(404, gin.H{
 			"message": "User with ID " + id + " Not Found" + err.Error(),
@@ -70,7 +69,7 @@ func (a *UserController) FindUserById(c *gin.Context) {
 		return
 	}
 	// Validate If User Found
-	logrus.Infof("Success Get Resource")
+
 	c.JSON(200, gin.H{
 		"code":    200,
 		"message": "Success Get Resource",
@@ -83,7 +82,7 @@ func (a *UserController) FindUserByEmail(c *gin.Context) {
 	user, err := a.userUC.FindUserByEmail(email)
 	if err != nil {
 		// Log For Error
-		logrus.Errorf("Failed Get Resource" + err.Error())
+
 		// Return If Condition Error
 		c.JSON(404, gin.H{
 			"message": "User With Email " + email + " Not Found" + err.Error(),
@@ -186,7 +185,7 @@ func (a *UserController) UpdateUser(c *gin.Context) {
 	err := c.ShouldBindJSON(&updatedUser)
 	if err != nil {
 		// Log For Bad Request
-		logrus.Errorf("Failed to bind JSON: %s", err.Error())
+
 		c.JSON(400, gin.H{
 			"message": "Failed to bind JSON: " + err.Error(),
 		})
@@ -197,7 +196,7 @@ func (a *UserController) UpdateUser(c *gin.Context) {
 	existingUser, err := a.userUC.FindUserById(id)
 	if err != nil {
 		// Log if ID not found or Error
-		logrus.Errorf("Failed to check existing user: %s", err.Error())
+
 		c.JSON(500, gin.H{
 			"message": "Internal Server Error",
 		})
@@ -215,7 +214,7 @@ func (a *UserController) UpdateUser(c *gin.Context) {
 		existingUserByEmail, err := a.userUC.FindUserByEmail(updatedUser.Email)
 		if err != nil {
 			// Log if Email not found or Error
-			logrus.Errorf("Failed to check existing user by email: %s", err.Error())
+
 			c.JSON(500, gin.H{
 				"message": "Internal Server Error",
 			})
@@ -234,7 +233,7 @@ func (a *UserController) UpdateUser(c *gin.Context) {
 	updatedUser, err = a.userUC.UpdateUser(updatedUser)
 	if err != nil {
 		// Log For Update User Error
-		logrus.Errorf("Failed to update user: %s", err.Error())
+
 		c.JSON(500, gin.H{
 			"message": "Internal Server Error",
 		})
@@ -242,7 +241,7 @@ func (a *UserController) UpdateUser(c *gin.Context) {
 	}
 
 	// Log For Success
-	logrus.Infof("User updated successfully")
+
 	c.JSON(200, gin.H{
 		"code":    200,
 		"message": "User updated successfully",
@@ -268,7 +267,7 @@ func (a *UserController) DeleteUser(c *gin.Context) {
 	}
 
 	// If User Successfully Deleted
-	logrus.Infof("User deleted successfully")
+
 	c.JSON(200, gin.H{
 		"code":    200,
 		"message": "User deleted successfully",

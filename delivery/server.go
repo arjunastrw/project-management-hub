@@ -13,10 +13,10 @@ import (
 )
 
 type Server struct {
-	//userUC    usecase.UserUseCase
+	userUC usecase.UserUseCase
 	taskUC usecase.TaskUsecase
 	//projectUC usecase.ProjectUsecase
-	//reportUC  usecase.ReportUsecase
+	reportUC usecase.ReportUsecase
 	//authUC     usecase.AuthUsecase
 	engine *gin.Engine
 	//jwtService service.JwtService
@@ -33,7 +33,7 @@ func (s *Server) Run() {
 func (s *Server) initRoute() {
 	rg := s.engine.Group("/pmh-api/v1")
 	//authMiddleware := middleware.NewAuthMiddleware(s.jwtService)
-	//controller.NewUserController(s.userUC /*authMiddleware,*/, rg).Route()
+	controller.NewUserController(rg, s.userUC).Route()
 	controller.NewTaskController(s.taskUC, rg).Route()
 	//controller.NewProjectController(s.projectUC, rg).Route()
 	//controller.NewReportController(s.reportUC, rg).Route()
@@ -55,12 +55,12 @@ func NewServer() *Server {
 
 	//inject db ke repository
 	taskRepository := repository.NewTaskRepository(db)
-	//userRepository := repository.NewUserRepository(db)
+	userRepository := repository.NewUserRepository(db)
 	//projectRepository := repository.NewProjectRepository(db)
 	//reportRepository := repository.NewReportRepository(db)
 
 	//inject repository ke usecase
-	//UserUseCase := usecase.NewUserUseCase(userRepository)
+	UserUseCase := usecase.NewUserUseCase(userRepository)
 	taskUsecase := usecase.NewTaskUsecase(taskRepository)
 	//projectUsecase := usecase.NewProjectUseCase(projectRepository)
 	//reportUsecase := usecase.NewReportUseCase(reportRepository)
@@ -72,10 +72,10 @@ func NewServer() *Server {
 	host := cfg.ApiPort
 
 	return &Server{
-		//userUC:    UserUseCase,
+		userUC: UserUseCase,
 		taskUC: taskUsecase,
 		//projectUC: projectUsecase,
-		//reportUC:  reportUsecase,
+		//reportUC: reportUsecase,
 		engine: engine,
 		host:   host,
 		//authUC:     authUsecase,
