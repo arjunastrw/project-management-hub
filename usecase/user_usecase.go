@@ -9,7 +9,11 @@ import (
 )
 
 type UserUseCase interface {
+<<<<<<< HEAD
 	FindAllUser(page int, size int) ([]model.User, shared_model.Paging)
+=======
+	FindAllUser(page int, size int) ([]model.User, shared_model.Paging, error)
+>>>>>>> 4e0c22da47a4350c832b379f60379ec7e899024d
 	FindUserById(id string) (model.User, error)
 	FindUserByEmail(email string) (model.User, error)
 	CreateUser(payload model.User) (model.User, error)
@@ -32,10 +36,15 @@ func (a *userUseCase) FindAllUser(page int, size int) ([]model.User, shared_mode
 	users, paging, err := a.userRepository.GetAll(page, size)
 	if err != nil {
 		return []model.User{}, shared_model.Paging{}, err
+<<<<<<< HEAD
 		a.logger.Error(err)
 	}
 
 	a.logger.Infof("Get All User Successfully")
+=======
+		logrus.Println(err)
+	}
+>>>>>>> 4e0c22da47a4350c832b379f60379ec7e899024d
 	return users, paging, nil
 }
 
@@ -48,10 +57,17 @@ func (a *userUseCase) FindUserById(id string) (model.User, error) {
 	// Check if user is not found
 	if user.Id == "" {
 		a.logger.Warnf("User with ID %s not found", id)
+<<<<<<< HEAD
 		return model.User{}, fmt.Errorf(" User with ID %s not found", id)
 	}
 
 	// User successfully found By ID
+=======
+		return model.User{}, fmt.Errorf("User with ID %s not found", id)
+	}
+
+	// User successfully found By Id
+>>>>>>> 4e0c22da47a4350c832b379f60379ec7e899024d
 	a.logger.Infof("User with ID %s found successfully", id)
 
 	return user, nil
@@ -71,7 +87,11 @@ func (a *userUseCase) FindUserByEmail(email string) (model.User, error) {
 	// Check if user not found
 	if user.Email == "" {
 		a.logger.Warnf("User with email %s not found", email)
+<<<<<<< HEAD
 		return model.User{}, fmt.Errorf(" User with email %s not found", email)
+=======
+		return model.User{}, fmt.Errorf("User with email %s not found", email)
+>>>>>>> 4e0c22da47a4350c832b379f60379ec7e899024d
 	}
 
 	// User successfully found By Email
@@ -94,7 +114,11 @@ func (a *userUseCase) CreateUser(payload model.User) (model.User, error) {
 
 	if existingUser.Email != "" {
 		a.logger.Warnf("Email %s is already exist", payload.Email)
+<<<<<<< HEAD
 		return model.User{}, fmt.Errorf(" Email %s is already exist", payload.Email)
+=======
+		return model.User{}, fmt.Errorf("Email %s is already exist", payload.Email)
+>>>>>>> 4e0c22da47a4350c832b379f60379ec7e899024d
 	}
 
 	// Create new user
@@ -103,9 +127,14 @@ func (a *userUseCase) CreateUser(payload model.User) (model.User, error) {
 		return model.User{}, err
 	}
 
+<<<<<<< HEAD
 	// Create User Successfully
 	a.logger.Infof(" Create User Sucessfully", payload)
 	fmt.Println("Create User Successfully", payload)
+=======
+	// Create User Succesfully
+	a.logger.Infof("Create User Sucessfully", payload)
+>>>>>>> 4e0c22da47a4350c832b379f60379ec7e899024d
 	return user, nil
 }
 
@@ -124,7 +153,11 @@ func (a *userUseCase) UpdateUser(payload model.User) (model.User, error) {
 
 		if existingUser.Email != "" {
 			a.logger.Warnf("Email %s is already exist", payload.Email)
+<<<<<<< HEAD
 			return model.User{}, fmt.Errorf(" Email %s is already exist", payload.Email)
+=======
+			return model.User{}, fmt.Errorf("Email %s is already exist", payload.Email)
+>>>>>>> 4e0c22da47a4350c832b379f60379ec7e899024d
 		}
 	}
 
@@ -134,8 +167,13 @@ func (a *userUseCase) UpdateUser(payload model.User) (model.User, error) {
 		return model.User{}, err
 	}
 
+<<<<<<< HEAD
 	// Update User Successfully
 	a.logger.Infof("Update User Successfully")
+=======
+	// Update User Succesfully
+	a.logger.Infof("Update User %s Successfully", payload)
+>>>>>>> 4e0c22da47a4350c832b379f60379ec7e899024d
 	return user, nil
 }
 
@@ -151,7 +189,11 @@ func (a *userUseCase) DeleteUser(id string) error {
 		return err
 	}
 
+<<<<<<< HEAD
 	// Delete User Successfully
+=======
+	// Delete User Succesfully
+>>>>>>> 4e0c22da47a4350c832b379f60379ec7e899024d
 	a.logger.Infof("Delete User %s Successfully", id)
 	return nil
 }
