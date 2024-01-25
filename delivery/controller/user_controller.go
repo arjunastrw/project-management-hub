@@ -34,17 +34,11 @@ func (a *UserController) Route() {
 
 func (a *UserController) FindAllUser(c *gin.Context) {
 	id := c.Param("id")
-	users, err := a.userUC.FindAllUser(id)
+	user, err := a.userUC.FindUserById(id)
 	if err != nil {
-		// Log For Error
-		logrus.Errorf("Failed Get Resource" + err.Error())
-		// Return If Condition Error
-		c.JSON(401, gin.H{
-			"message": "Failed Get Resource" + err.Error(),
-		})
+		common.SendErrorResponse(c, 400, "tasks id "+id+" not found")
 		return
 	}
-
 	// Log For Success
 	logrus.Infof("Success Get Resource")
 
@@ -52,7 +46,7 @@ func (a *UserController) FindAllUser(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"code":    200,
 		"message": "Success Get Resource",
-		"data":    users,
+		"data":    user,
 	})
 }
 
@@ -109,8 +103,9 @@ func (a *UserController) CreateUser(c *gin.Context) {
 		return
 	}
 
+	email := c.Param("email")
 	// Check If Email Already Exist
-	existingUser, err := a.userUC.FindUserByEmail(user.Email)
+	existingUser, err := a.userUC.FindUserByEmail(email)
 	if err != nil {
 		// Log for Checking Existing User Error or Bad Request
 		logrus.Errorf("Failed to check existing user: %s", err.Error())
@@ -121,10 +116,8 @@ func (a *UserController) CreateUser(c *gin.Context) {
 	}
 
 	// Check if Email Already Exist Return Message error Bad Request
-	if existingUser != nil {
-		c.JSON(400, gin.H{
-			"message": "Email already exists",
-		})
+	if existingUser.Email != "" {
+		common.SendErrorResponse(c, 400, "Email "+email+" already exist")
 		return
 	}
 
@@ -184,10 +177,8 @@ func (a *UserController) UpdateUser(c *gin.Context) {
 	}
 
 	// Validate If ID notfound
-	if existingUser == nil {
-		c.JSON(404, gin.H{
-			"message": "User not found",
-		})
+	if err != nil {
+		common.SendErrorResponse(c, 404, "User with id "+id+" not found")
 		return
 	}
 
@@ -204,10 +195,8 @@ func (a *UserController) UpdateUser(c *gin.Context) {
 		}
 
 		// Validate If Email already using by another user
-		if existingUserByEmail != nil {
-			c.JSON(400, gin.H{
-				"message": "Email already exists",
-			})
+		if existingUser.Email != "" {
+			common.SendErrorResponse(c, 400, " Email "+existingUserByEmail.Email+" already exist")
 			return
 		}
 	}
