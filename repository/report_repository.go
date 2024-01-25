@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"enigma.com/projectmanagementhub/model"
+	"enigma.com/projectmanagementhub/report"
 )
 
 type ReportRepository interface {
@@ -16,7 +17,8 @@ type ReportRepository interface {
 }
 
 type reportRepository struct {
-	db *sql.DB
+	db     *sql.DB
+	report report.ReportToTXT
 }
 
 // CreateReport implements Report.
@@ -27,6 +29,13 @@ func (r *reportRepository) CreateReport(payload model.Report) (model.Report, err
 	err := r.db.QueryRow(query, payload).Scan(&report.Id, &report.User_id, &report.Report, &report.Task_id, &report.Created_at, &report.Updated_at)
 	if err != nil {
 		log.Println("report_repository.QueryRow", err.Error())
+		return model.Report{}, err
+	}
+
+	// report to txt
+	reportToTXT := model.ShowReport{Content: report}
+	err = r.report.WriteReport(reportToTXT)
+	if err != nil {
 		return model.Report{}, err
 	}
 	return report, nil
@@ -104,6 +113,13 @@ func (r *reportRepository) UpdateReport(payload model.Report) (model.Report, err
 	err := r.db.QueryRow(query, payload.Id, payload.User_id, payload.Report, payload.Task_id).Scan(&report.Id, &report.User_id, &report.Report, &report.Task_id, &report.Created_at, &report.Updated_at)
 	if err != nil {
 		log.Println("report_repository.QueryRow", err.Error())
+		return model.Report{}, err
+	}
+
+	// report to txt
+	reportToTXT := model.ShowReport{Content: report}
+	err = r.report.WriteReport(reportToTXT)
+	if err != nil {
 		return model.Report{}, err
 	}
 	return report, nil
