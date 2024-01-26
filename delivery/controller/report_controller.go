@@ -4,23 +4,24 @@ import (
 	"net/http"
 
 	"enigma.com/projectmanagementhub/model"
+	"enigma.com/projectmanagementhub/shared/common"
 	"enigma.com/projectmanagementhub/usecase"
 	"github.com/gin-gonic/gin"
 )
 
-type ReportController struct {
+type ReportHandler struct {
 	reportUC usecase.ReportUsecase
 	rg       *gin.RouterGroup
 }
 
-func NewReportController(reportUC usecase.ReportUsecase, rg *gin.RouterGroup) *ReportController {
-	return &ReportController{
+func NewReportController(reportUC usecase.ReportUsecase, rg *gin.RouterGroup) *ReportHandler {
+	return &ReportHandler{
 		reportUC: reportUC,
 		rg:       rg,
 	}
 }
 
-func (h *ReportController) CreateNewReportController(c *gin.Context) {
+func (h *ReportHandler) CreateNewReportHandler(c *gin.Context) {
 	var newReport model.Report
 	err := c.ShouldBind(&newReport)
 	if err != nil {
@@ -41,7 +42,7 @@ func (h *ReportController) CreateNewReportController(c *gin.Context) {
 	})
 }
 
-func (h *ReportController) UpdateReportController(c *gin.Context) {
+func (h *ReportHandler) UpdateReportHandler(c *gin.Context) {
 	var updatedReport model.Report
 	err := c.ShouldBind(&updatedReport)
 	if err != nil {
@@ -66,24 +67,24 @@ func (h *ReportController) UpdateReportController(c *gin.Context) {
 	})
 }
 
-func (h *ReportController) DeleteReportByIdController(c *gin.Context) {
+func (h *ReportHandler) DeleteReportByIdHandler(c *gin.Context) {
 	id := c.Query("id")
 	err := h.reportUC.DeleteReportById(id)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"code":    http.StatusBadRequest,
-			"message": "failed to delete task",
+			"message": "failed to delete report",
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    http.StatusOK,
-		"message": "succesfully deleted tsak",
+		"message": "succesfully deleted report",
 	})
 }
 
-func (h *ReportController) GetReportByTaskIdController(c *gin.Context) {
+func (h *ReportHandler) GetReportByTaskIdHandler(c *gin.Context) {
 	taskId := c.Query("taskId")
 
 	reports, err := h.reportUC.GetReportByTaskId(taskId)
@@ -99,20 +100,14 @@ func (h *ReportController) GetReportByTaskIdController(c *gin.Context) {
 		response = append(response, v)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"status": gin.H{
-			"code":    http.StatusOK,
-			"message": "OK",
-		},
-		"data": response,
-	})
+	common.SendSuccesResponse(c, http.StatusOK, "Succes", response)
 
 }
 
-func (h *ReportController) GetReportByUserIdController(c *gin.Context) {
+func (h *ReportHandler) GetReportByUserIdHandler(c *gin.Context) {
 	userId := c.Query("userId")
 
-	reports, err := h.reportUC.GetReportByTaskId(userId)
+	reports, err := h.reportUC.GetReportByUserId(userId)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"code":    http.StatusInternalServerError,
@@ -125,21 +120,15 @@ func (h *ReportController) GetReportByUserIdController(c *gin.Context) {
 		response = append(response, v)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"status": gin.H{
-			"code":    http.StatusOK,
-			"message": "OK",
-		},
-		"data": response,
-	})
+	common.SendSuccesResponse(c, http.StatusOK, "Succes", response)
 
 }
 
 // rg meng group end-point2
-func (h *ReportController) Route() {
-	h.rg.GET("/get/")
-	h.rg.GET("/get/reportuserid", h.GetReportByUserIdController)
-	h.rg.POST("/createreport", h.CreateNewReportController)
-	h.rg.PUT("/updatereport", h.UpdateReportController)
-	h.rg.DELETE("/delettask", h.DeleteReportByIdController)
+func (h *ReportHandler) Route() {
+	h.rg.GET("/get/reporttaskid", h.GetReportByTaskIdHandler)
+	h.rg.GET("/get/reportuserid", h.GetReportByUserIdHandler)
+	h.rg.POST("/createreport", h.CreateNewReportHandler)
+	h.rg.PUT("/updatereport", h.UpdateReportHandler)
+	h.rg.DELETE("/deletedreport", h.DeleteReportByIdHandler)
 }

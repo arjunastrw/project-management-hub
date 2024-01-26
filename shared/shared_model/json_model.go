@@ -15,3 +15,9 @@ type PagedResponse struct {
 	Data   interface{} `json:"data"`
 	Paging Paging      `json:"paging"`
 }
+
+type StatusSucces struct {
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
+}

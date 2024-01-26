@@ -2,8 +2,10 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 
+	"enigma.com/projectmanagementhub/config"
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/report"
 )
@@ -24,15 +26,14 @@ type reportRepository struct {
 // CreateReport implements Report.
 func (r *reportRepository) CreateReport(payload model.Report) (model.Report, error) {
 	var report model.Report
-	query := "INSERT INTO reports(user_id, report, task_id, updated_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING id, user_id, report, task_id, created_at, updated_at"
 
-	err := r.db.QueryRow(query, payload).Scan(&report.Id, &report.User_id, &report.Report, &report.Task_id, &report.Created_at, &report.Updated_at)
+	err := r.db.QueryRow(config.CreateReport, payload.User_id, payload.Report, payload.Task_id).Scan(&report.Id, &report.User_id, &report.Report, &report.Task_id, &report.Created_at, &report.Updated_at)
 	if err != nil {
 		log.Println("report_repository.QueryRow", err.Error())
 		return model.Report{}, err
 	}
 
-	// report to txt
+	//report to txt
 	reportToTXT := model.ShowReport{Content: report}
 	err = r.report.WriteReport(reportToTXT)
 	if err != nil {
@@ -44,8 +45,8 @@ func (r *reportRepository) CreateReport(payload model.Report) (model.Report, err
 
 // DeleteReportById implements Report.
 func (r *reportRepository) DeleteReportById(id string) error {
-	query := "UPDATE reports SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS null"
-	_, err := r.db.Query(query, id)
+
+	_, err := r.db.Query(config.DeleteReportById, id)
 	if err != nil {
 		log.Println("report_repository.Query", err.Error())
 		return err
@@ -57,9 +58,8 @@ func (r *reportRepository) DeleteReportById(id string) error {
 // GetReportByProjectId implements Report.
 func (r *reportRepository) GetReportByUserId(userId string) ([]model.Report, error) {
 	var reports []model.Report
-	query := "SELECT id, user_id, report, task_id, created_at, updated_at FROM reports WHERE user_id = $1 AND deleted_at IS null"
 
-	rows, err := r.db.Query(query, userId)
+	rows, err := r.db.Query(config.GetReportByUserId, userId)
 	if err != nil {
 		log.Println("report_repository.QueryRow", err.Error())
 		return nil, err
@@ -83,9 +83,8 @@ func (r *reportRepository) GetReportByUserId(userId string) ([]model.Report, err
 // GetReportByTaskId implements Report.
 func (r *reportRepository) GetReportByTaskId(taskId string) ([]model.Report, error) {
 	var reports []model.Report
-	query := "SELECT id, user_id, report, task_id, created_at, updated_at FROM reports WHERE task_id = $1 AND deleted_at IS null"
 
-	rows, err := r.db.Query(query, taskId)
+	rows, err := r.db.Query(config.GetReportByTaskId, taskId)
 	if err != nil {
 		log.Println("report_repository.QueryRow", err.Error())
 		return nil, err
@@ -95,6 +94,7 @@ func (r *reportRepository) GetReportByTaskId(taskId string) ([]model.Report, err
 		report := model.Report{}
 		//updated_at cannot be nil
 		err := rows.Scan(&report.Id, &report.User_id, &report.Report, &report.Task_id, &report.Created_at, &report.Updated_at)
+		fmt.Println("ini report :", report)
 		if err != nil {
 			log.Println("reportRepository.Rows.Next", err.Error())
 			return nil, err
@@ -102,6 +102,7 @@ func (r *reportRepository) GetReportByTaskId(taskId string) ([]model.Report, err
 
 		reports = append(reports, report)
 	}
+	fmt.Println("ini reports :", reports)
 
 	return reports, nil
 }
@@ -109,8 +110,7 @@ func (r *reportRepository) GetReportByTaskId(taskId string) ([]model.Report, err
 // UpdateReport implements Report.
 func (r *reportRepository) UpdateReport(payload model.Report) (model.Report, error) {
 	var report model.Report
-	query := "UPDATE reports SET report = $3, task_id = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND user_id = $2 AND deleted_at IS null RETURNING  id, user_id, report, task_id, created_at, updated_at"
-	err := r.db.QueryRow(query, payload.Id, payload.User_id, payload.Report, payload.Task_id).Scan(&report.Id, &report.User_id, &report.Report, &report.Task_id, &report.Created_at, &report.Updated_at)
+	err := r.db.QueryRow(config.UpdateReport, payload.Id, payload.User_id, payload.Report, payload.Task_id).Scan(&report.Id, &report.User_id, &report.Report, &report.Task_id, &report.Created_at, &report.Updated_at)
 	if err != nil {
 		log.Println("report_repository.QueryRow", err.Error())
 		return model.Report{}, err
@@ -127,6 +127,7 @@ func (r *reportRepository) UpdateReport(payload model.Report) (model.Report, err
 
 func NewReportRepository(db *sql.DB) ReportRepository {
 	return &reportRepository{
-		db: db,
+		db:     db,
+		report: &report.AreportToTXT{},
 	}
 }
