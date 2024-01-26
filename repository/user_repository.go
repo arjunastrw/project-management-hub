@@ -98,9 +98,59 @@ func (u *userRepository) GetById(id string) (model.User, error) {
 
 	//isi task
 	if user.Role == "MANAGER" {
+		var projects []model.Project
+		row, err := u.db.Query(config.GetProjectByManagerID, user.Id)
+		if err != nil {
+			log.Println("Currently no project assigned")
+		}
 
+		for row.Next() {
+			project := model.Project{}
+			//updated_at cannot be nil
+			err := row.Scan(&project.Id, &project.Name, &project.ManagerId, &project.Deadline, &project.CreatedAt, &project.UpdatedAt)
+			if err != nil {
+				log.Println("projectRepository.Rows.Next", err.Error())
+			}
+
+			projects = append(projects, project)
+		}
+
+		user.Project = projects
 	} else if user.Role == "TEAM MEMBER" {
+		var tasks []model.Task
 
+		row, err := u.db.Query(config.GetTaskByPersonInCharge, user.Id)
+		if err != nil {
+			log.Println("Currently no task available")
+		}
+		for row.Next() {
+			task := model.Task{}
+			err := row.Scan(&task.Id, &task.Name, &task.Status, &task.Approval, &task.PersonInCharge, &task.Deadline, &task.ProjectId, &task.ApprovalDate, &task.Feedback, &task.CreatedAt, &task.UpdatedAt)
+			if err != nil {
+				log.Println("taskRepository.Rows.Next", err.Error())
+			}
+			tasks = append(tasks, task)
+		}
+		user.Task = tasks
+
+		var projects []model.Project
+		row, err = u.db.Query(config.GetAllProjectMember, user.Id)
+		if err != nil {
+			log.Println("Currently no project assigned")
+		}
+
+		for row.Next() {
+			project := model.Project{}
+			//updated_at cannot be nil
+			err := row.Scan(&project.Id, &project.Name, &project.ManagerId, &project.Deadline, &project.CreatedAt, &project.UpdatedAt)
+			if err != nil {
+				log.Println("projectRepository.Rows.Next", err.Error())
+			}
+
+			projects = append(projects, project)
+		}
+
+		user.Project = projects
 	}
 
 	return user, nil
