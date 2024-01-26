@@ -2,10 +2,10 @@ package controller
 
 import (
 	"fmt"
-	"net/http"
+	"log"
 	"strconv"
-	"strings"
 
+	"enigma.com/projectmanagementhub/delivery/middleware"
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/shared/common"
 	"enigma.com/projectmanagementhub/usecase"
@@ -13,24 +13,26 @@ import (
 )
 
 type UserController struct {
-	userUC usecase.UserUseCase
-	rg     *gin.RouterGroup
+	userUC         usecase.UserUseCase
+	authMiddleware middleware.AuthMiddleware
+	rg             *gin.RouterGroup
 }
 
-func NewUserController(rg *gin.RouterGroup, userUC usecase.UserUseCase) *UserController {
+func NewUserController(rg *gin.RouterGroup, authMiddleware middleware.AuthMiddleware, userUC usecase.UserUseCase) *UserController {
 	return &UserController{
-		userUC: userUC,
-		rg:     rg,
+		userUC:         userUC,
+		authMiddleware: authMiddleware,
+		rg:             rg,
 	}
 }
 
 func (a *UserController) Route() {
-	a.rg.GET("/user/list", a.FindAllUser)
-	a.rg.GET("/user/:id", a.FindUserById)
-	a.rg.GET("/user/email/:email", a.FindUserByEmail)
-	a.rg.POST("/user/create", a.CreateUser)
-	a.rg.PUT("/user/update", a.UpdateUser)
-	a.rg.DELETE("/user/delete/:id", a.DeleteUser)
+	a.rg.GET("/user/list", a.authMiddleware.RequireToken("ADMIN"), a.FindAllUser)
+	a.rg.GET("/user/:id", a.authMiddleware.RequireToken("ADMIN", "MANAGER", "TEAM MEMBER"), a.FindUserById)
+	a.rg.GET("/user/email/:email", a.authMiddleware.RequireToken("ADMIN", "MANAGER", "TEAM MEMBER"), a.FindUserByEmail)
+	a.rg.POST("/user/create", a.authMiddleware.RequireToken("ADMIN"), a.CreateUser)
+	a.rg.PUT("/user/update", a.authMiddleware.RequireToken("ADMIN"), a.UpdateUser)
+	a.rg.DELETE("/user/delete/:id", a.authMiddleware.RequireToken("ADMIN"), a.DeleteUser)
 }
 
 func (a *UserController) FindAllUser(c *gin.Context) {
@@ -41,17 +43,20 @@ func (a *UserController) FindAllUser(c *gin.Context) {
 	// Call FindAllUser method
 	users, paging, err := a.userUC.FindAllUser(page, size)
 	if err != nil {
+		//log bad request
+		log.Println("Failed to get users" + err.Error())
+		// return bad request
 		common.SendErrorResponse(c, 400, "Failed to get users")
 		return
 	}
-
-	// Log for Get User Success
-
 	var resp []interface{}
 
 	for _, v := range users {
 		resp = append(resp, v)
 	}
+	// log success
+	log.Println("Success Get Resource")
+	// return success
 	common.SendPagedResponse(c, resp, paging, "OK")
 }
 
@@ -60,20 +65,15 @@ func (a *UserController) FindUserById(c *gin.Context) {
 	user, err := a.userUC.FindUserById(id)
 	if err != nil {
 		// Log For Error
-
-		// Return If Condition Error
-		c.JSON(404, gin.H{
-			"message": "User with ID " + id + " Not Found" + err.Error(),
-		})
+		log.Println("Failed to get users" + err.Error())
+		// Return Bad Request
+		common.SendErrorResponse(c, 400, "User with ID "+id+" not found")
 		return
 	}
-	// Validate If User Found
-
-	c.JSON(200, gin.H{
-		"code":    200,
-		"message": "Success Get Resource",
-		"data":    user,
-	})
+	// Log if success
+	log.Println("Success Get Resource")
+	// Return Success
+	common.SendSingleResponse(c, user, "Success")
 }
 
 func (a *UserController) FindUserByEmail(c *gin.Context) {
@@ -81,91 +81,41 @@ func (a *UserController) FindUserByEmail(c *gin.Context) {
 	user, err := a.userUC.FindUserByEmail(email)
 	if err != nil {
 		// Log For Error
-
-		// Return If Condition Error
-		c.JSON(404, gin.H{
-			"message": "User With Email " + email + " Not Found" + err.Error(),
-		})
+		log.Println("Failed to get users" + err.Error())
+		// Return Bad Request
+		common.SendErrorResponse(c, 400, "User With Email "+email+" Not Found")
 		return
 	}
-	c.JSON(200, gin.H{
-		"code":    200,
-		"message": "Success Get Resource",
-		"data":    user,
-	})
+
+	// Log if success
+	log.Println("Success Get Resource")
+	// Return Success
+	common.SendSingleResponse(c, user, "Success")
 }
 
 func (a *UserController) CreateUser(c *gin.Context) {
-	var newuser model.User
-	if err := c.ShouldBind(&newuser); err != nil {
+	var newUser model.User
+	if err := c.ShouldBind(&newUser); err != nil {
+		// Log For Bad Request
+		log.Println("Failed to bind JSON: " + err.Error())
+		// Return Bad Request
 		common.SendErrorResponse(c, 400, err.Error())
 		return
 	}
 
-	user, err := a.userUC.CreateUser(newuser)
+	user, err := a.userUC.CreateUser(newUser)
 	if err != nil {
-		if strings.Contains(err.Error(), "Email already exist") {
-			common.SendErrorResponse(c, 400, "Email already exists")
-			return
-		}
-
+		// Log For Error
+		log.Println("Failed to create user: " + err.Error())
+		// Return Internal Server Error
 		common.SendErrorResponse(c, 500, err.Error())
 		return
 	}
-
+	// Log For Success
+	log.Println("Success Create User")
+	// Return Success
 	common.SendSingleResponse(c, user, "Success")
 }
-
-// func (a *UserController) CreateUser(c *gin.Context) {
-// 	// Bind JSON request to User Model
-// 	user := model.User{}
-// 	err := c.ShouldBindJSON(&user)
-// 	if err != nil {
-// 		// Log For Bad Request
-// 		logrus.Errorf("Failed to bind JSON: %s", err.Error())
-// 		c.JSON(400, gin.H{
-// 			"message": "Failed to bind JSON: " + err.Error(),
-// 		})
-// 		return
-// 	}
-
-// 	email := c.Param("email")
-// 	// Check If Email Already Exist
-// 	existingUser, err := a.userUC.FindUserByEmail(email)
-// 	if err != nil {
-// 		// Log for Checking Existing User Error or Bad Request
-// 		logrus.Errorf("Failed to check existing user: %s", err.Error())
-// 		c.JSON(500, gin.H{
-// 			"message": "Internal Server Error",
-// 		})
-// 		return
-// 	}
-
-// 	// Check if Email Already Exist Return Message error Bad Request
-// 	if existingUser.Email != "" {
-// 		common.SendErrorResponse(c, 400, "Email "+email+" already exist")
-// 		return
-// 	}
-
-// 	// If Email Not Exist Create New User
-// 	newUser, err := a.userUC.CreateUser(user)
-// 	if err != nil {
-// 		// Log For Create User Error
-// 		logrus.Errorf("Failed to create user: %s", err.Error())
-// 		c.JSON(500, gin.H{
-// 			"message": "Internal Server Error",
-// 		})
-// 		return
-// 	}
-
-// 	// Log For Success
-// 	logrus.Infof("User created successfully")
-// 	c.JSON(201, gin.H{
-// 		"code":    201,
-// 		"message": "User created successfully",
-// 		"data":    newUser,
-// 	})
-// }
 
 func (a *UserController) UpdateUser(c *gin.Context) {
 
@@ -174,8 +124,9 @@ func (a *UserController) UpdateUser(c *gin.Context) {
 	err := c.ShouldBindJSON(&user)
 	if err != nil {
 		// Log For Bad Request
-
-		common.SendErrorResponse(c, http.StatusBadRequest, err.Error())
+		log.Println("Failed to bind JSON: " + err.Error())
+		// Return Bad Request
+		common.SendErrorResponse(c, 400, err.Error())
 		return
 	}
 
@@ -183,12 +134,15 @@ func (a *UserController) UpdateUser(c *gin.Context) {
 	updatedUser, err := a.userUC.UpdateUser(user)
 	if err != nil {
 		// Log For Update User Error
-		common.SendErrorResponse(c, http.StatusInternalServerError, err.Error())
+		log.Println("Failed to update user: " + err.Error())
+		// Return Internal Server Error
+		common.SendErrorResponse(c, 500, err.Error())
 		return
 	}
 
 	// Log For Success
-
+	log.Println("Success Update User")
+	// Return Success
 	common.SendSingleResponse(c, updatedUser, "Success")
 }
 
@@ -196,8 +150,11 @@ func (a *UserController) DeleteUser(c *gin.Context) {
 	// Get ID from URL parameter
 	id := c.Param("id")
 
-	// Validate ID
+	// Check if ID is empty
 	if id == "" {
+		// Log For Error
+		log.Println("Error occurred")
+		// Return Bad Request
 		common.SendErrorResponse(c, 400, "ID is required")
 		return
 	}
@@ -205,14 +162,15 @@ func (a *UserController) DeleteUser(c *gin.Context) {
 	// Delete User
 	err := a.userUC.DeleteUser(id)
 	if err != nil {
+		// Log For Error
+		log.Println("Failed to delete user: " + err.Error())
+		// Return Internal Server Error
 		common.SendErrorResponse(c, 500, fmt.Sprintf("Failed to delete user: %s", err))
 		return
 	}
 
-	// If User Successfully Deleted
-
-	c.JSON(200, gin.H{
-		"code":    200,
-		"message": "User deleted successfully",
-	})
+	// log for success
+	log.Println("Success Delete User")
+	// return success
+	common.SendSingleResponse(c, nil, "Success Delete User")
 }
