@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"enigma.com/projectmanagementhub/delivery/middleware"
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/shared/common"
 	"enigma.com/projectmanagementhub/usecase"
@@ -13,28 +14,30 @@ import (
 
 type ProjectController struct {
 	projectUsecase usecase.ProjectUseCase
+	authMiddleware middleware.AuthMiddleware
 	rg             *gin.RouterGroup
 }
 
-func NewProjectController(projectUsecase usecase.ProjectUseCase, rg *gin.RouterGroup) *ProjectController {
+func NewProjectController(projectUsecase usecase.ProjectUseCase, authMiddleware middleware.AuthMiddleware, rg *gin.RouterGroup) *ProjectController {
 	return &ProjectController{
 		projectUsecase: projectUsecase,
+		authMiddleware: authMiddleware,
 		rg:             rg,
 	}
 }
 
 func (a *ProjectController) Route() {
-	a.rg.GET("/project", a.GetAll)
-	a.rg.GET("/project/id/:id", a.GetProjectById)
-	a.rg.GET("/project/deadline/:deadline", a.GetProjectsByDeadline)
-	a.rg.GET("/project/manager/:id", a.GetProjectsByManagerId)
-	a.rg.GET("/project/member/:id", a.GetProjectsByMemberId)
-	a.rg.POST("/project/create", a.CreateNewProject)
-	a.rg.POST("/project/addmember/:id", a.AddProjectMember)
-	a.rg.DELETE("/project/deletemember/:id", a.DeleteProjectMember)
-	a.rg.GET("/project/allmember/:id", a.GetAllProjectMember)
-	a.rg.PUT("/project/update", a.UpdateProject)
-	a.rg.DELETE("/project/delete/:id", a.DeleteProject)
+	a.rg.GET("/project", a.authMiddleware.RequireToken("ADMIN"), a.GetAll)
+	a.rg.GET("/project/id/:id", a.authMiddleware.RequireToken("ADMIN", "MANAGER", "TEAM MEMBER"), a.GetProjectById)
+	a.rg.GET("/project/deadline/:deadline", a.authMiddleware.RequireToken("ADMIN", "MANAGER"), a.GetProjectsByDeadline)
+	a.rg.GET("/project/manager/:id", a.authMiddleware.RequireToken("ADMIN", "MANAGER"), a.GetProjectsByManagerId)
+	a.rg.GET("/project/member/:id", a.authMiddleware.RequireToken("ADMIN", "MANAGER", "TEAM MEMBER"), a.GetProjectsByMemberId)
+	a.rg.POST("/project/create", a.authMiddleware.RequireToken("ADMIN"), a.CreateNewProject)
+	a.rg.POST("/project/addmember/:id", a.authMiddleware.RequireToken("ADMIN", "MANAGER"), a.AddProjectMember)
+	a.rg.DELETE("/project/deletemember/:id", a.authMiddleware.RequireToken("ADMIN", "MANAGER"), a.DeleteProjectMember)
+	a.rg.GET("/project/allmember/:id", a.authMiddleware.RequireToken("ADMIN", "MANAGER", "TEAM MEMBER"), a.GetAllProjectMember)
+	a.rg.PUT("/project/update", a.authMiddleware.RequireToken("ADMIN", "MANAGER"), a.UpdateProject)
+	a.rg.DELETE("/project/delete/:id", a.authMiddleware.RequireToken("ADMIN"), a.DeleteProject)
 
 }
 

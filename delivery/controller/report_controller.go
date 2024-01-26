@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 
+	"enigma.com/projectmanagementhub/delivery/middleware"
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/shared/common"
 	"enigma.com/projectmanagementhub/usecase"
@@ -10,14 +11,16 @@ import (
 )
 
 type ReportController struct {
-	reportUC usecase.ReportUsecase
-	rg       *gin.RouterGroup
+	reportUC       usecase.ReportUsecase
+	authMiddleware middleware.AuthMiddleware
+	rg             *gin.RouterGroup
 }
 
-func NewReportController(reportUC usecase.ReportUsecase, rg *gin.RouterGroup) *ReportController {
+func NewReportController(reportUC usecase.ReportUsecase, authMiddleware middleware.AuthMiddleware, rg *gin.RouterGroup) *ReportController {
 	return &ReportController{
-		reportUC: reportUC,
-		rg:       rg,
+		reportUC:       reportUC,
+		authMiddleware: authMiddleware,
+		rg:             rg,
 	}
 }
 
@@ -98,9 +101,9 @@ func (h *ReportController) GetReportByUserIdController(c *gin.Context) {
 
 // rg meng group end-point2
 func (h *ReportController) Route() {
-	h.rg.GET("/get/reporttaskid", h.GetReportByTaskIdController)
-	h.rg.GET("/get/reportuserid", h.GetReportByUserIdController)
-	h.rg.POST("/createreport", h.CreateNewReportController)
-	h.rg.PUT("/updatereport", h.UpdateReportController)
-	h.rg.DELETE("/deletedreport", h.DeleteReportByIdController)
+	h.rg.GET("/get/reporttaskid", h.authMiddleware.RequireToken("ADMIN", "MANAGER"), h.GetReportByTaskIdController)
+	h.rg.GET("/get/reportuserid", h.authMiddleware.RequireToken("ADMIN", "MANAGER"), h.GetReportByUserIdController)
+	h.rg.POST("/createreport", h.authMiddleware.RequireToken("ADMIN", "MANAGER"), h.CreateNewReportController)
+	h.rg.PUT("/updatereport", h.authMiddleware.RequireToken("TEAM MEMBER"), h.UpdateReportController)
+	h.rg.DELETE("/deletedreport", h.authMiddleware.RequireToken("ADMIN"), h.DeleteReportByIdController)
 }

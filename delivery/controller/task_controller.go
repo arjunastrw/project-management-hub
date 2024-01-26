@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"enigma.com/projectmanagementhub/delivery/middleware"
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/shared/common"
 	"enigma.com/projectmanagementhub/usecase"
@@ -11,29 +12,28 @@ import (
 )
 
 type TaskController struct {
-	taskUC usecase.TaskUsecase
-	rg     *gin.RouterGroup
+	taskUC         usecase.TaskUsecase
+	authMiddleware middleware.AuthMiddleware
+	rg             *gin.RouterGroup
 }
 
-func NewTaskController(taskUC usecase.TaskUsecase, rg *gin.RouterGroup) *TaskController {
+func NewTaskController(taskUC usecase.TaskUsecase, authMiddleware middleware.AuthMiddleware, rg *gin.RouterGroup) *TaskController {
 	return &TaskController{
-		taskUC: taskUC,
-		rg:     rg,
+		taskUC:         taskUC,
+		authMiddleware: authMiddleware,
+		rg:             rg,
 	}
 }
 
 // update ini
 func (t *TaskController) Route() {
-	/*done*/ t.rg.GET("/tasks/list", t.GetAllTask)
-	t.rg.GET("/tasks/getbypic/:id", t.GetTaskByPersonInCharge)
-	t.rg.GET("/tasks/getbyid/:id", t.GetTaskById)
-	/*done*/ t.rg.GET("/tasks/getbyprojectid/:id", t.GetTaskByProjectId)
-	t.rg.POST("/tasks/create", t.CreateTask)
-	t.rg.PUT("/tasks/update", t.UpdateTask)
-	t.rg.DELETE("/tasks/delete/:id", t.DeleteTask)
-	/*
-		GetById(Id string) (model.Task, error)
-		GetByProjectId(Id string) ([]model.Task, error)*/
+	t.rg.GET("/tasks/list", t.authMiddleware.RequireToken("ADMIN", "MANAGER"), t.GetAllTask)
+	t.rg.GET("/tasks/getbypic/:id", t.authMiddleware.RequireToken("ADMIN", "MANAGER", "TEAM MEMBER"), t.GetTaskByPersonInCharge)
+	t.rg.GET("/tasks/getbyid/:id", t.authMiddleware.RequireToken("ADMIN", "MANAGER", "TEAM MEMBER"), t.GetTaskById)
+	t.rg.GET("/tasks/getbyprojectid/:id", t.authMiddleware.RequireToken("ADMIN", "MANAGER", "TEAM MEMBER"), t.GetTaskByProjectId)
+	t.rg.POST("/tasks/create", t.authMiddleware.RequireToken("MANAGER"), t.CreateTask)
+	t.rg.PUT("/tasks/update", t.authMiddleware.RequireToken("MANAGER", "TEAM MEMBER"), t.UpdateTask)
+	t.rg.DELETE("/tasks/delete/:id", t.authMiddleware.RequireToken("MANAGER"), t.DeleteTask)
 }
 
 func (t *TaskController) CreateTask(c *gin.Context) {

@@ -36,9 +36,9 @@ func (s *Server) initRoute() {
 	rg := s.engine.Group("/pmh-api/v1")
 	authMiddleware := middleware.NewAuthMiddleware(s.jwtService)
 	controller.NewUserController(rg, authMiddleware, s.userUC).Route()
-	controller.NewTaskController(s.taskUC, rg).Route()
-	controller.NewProjectController(s.projectUC, rg).Route()
-	controller.NewReportController(s.reportUC, rg).Route()
+	controller.NewTaskController(s.taskUC, authMiddleware, rg).Route()
+	controller.NewProjectController(s.projectUC, authMiddleware, rg).Route()
+	controller.NewReportController(s.reportUC, authMiddleware, rg).Route()
 	controller.NewAuthController(s.authUC, rg).Route()
 }
 
