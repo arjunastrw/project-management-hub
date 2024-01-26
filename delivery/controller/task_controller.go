@@ -133,8 +133,5 @@ func (t *TaskController) DeleteTask(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code":    200,
-		"message": "Task Deleted",
-	})
+	common.SendSingleResponse(c, nil, "Success")
 }
