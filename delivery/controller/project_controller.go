@@ -44,18 +44,21 @@ func (a *ProjectController) Route() {
 func (pc *ProjectController) GetAll(c *gin.Context) {
 	page, err := strconv.Atoi(c.Query("page"))
 	if err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusBadRequest, "Invalid page parameter")
 		return
 	}
 
 	size, err := strconv.Atoi(c.Query("size"))
 	if err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusBadRequest, "Invalid size parameter")
 		return
 	}
 
 	projects, paging, err := pc.projectUsecase.GetAll(page, size)
 	if err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -74,6 +77,7 @@ func (pc *ProjectController) GetProjectById(c *gin.Context) {
 	id := c.Param("id")
 	project, err := pc.projectUsecase.GetProjectById(id)
 	if err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusBadRequest, "Project id"+id+"not found")
 		return
 	}
@@ -91,6 +95,7 @@ func (pc *ProjectController) GetProjectsByDeadline(c *gin.Context) {
 
 	projects, err := pc.projectUsecase.GetProjectsByDeadline(deadline)
 	if err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusInternalServerError, "Error get project by Deadline")
 		return
 	}
@@ -105,6 +110,7 @@ func (pc *ProjectController) GetProjectsByManagerId(c *gin.Context) {
 
 	projects, err := pc.projectUsecase.GetProjectsByManagerId(managerID)
 	if err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusInternalServerError, "Error get Project Manager by Id")
 		return
 	}
@@ -119,6 +125,7 @@ func (pc *ProjectController) GetProjectsByMemberId(c *gin.Context) {
 
 	projects, err := pc.projectUsecase.GetProjectsByMemberId(memberID)
 	if err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusInternalServerError, "Error get Project by Member Id")
 		return
 	}
@@ -132,12 +139,14 @@ func (pc *ProjectController) CreateNewProject(c *gin.Context) {
 	var request model.Project
 
 	if err := c.ShouldBindJSON(&request); err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	createdProject, err := pc.projectUsecase.CreateNewProject(request)
 	if err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -155,12 +164,14 @@ func (pc *ProjectController) AddProjectMember(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err := pc.projectUsecase.AddProjectMember(id, request.Members)
 	if err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -178,12 +189,14 @@ func (pc *ProjectController) DeleteProjectMember(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err := pc.projectUsecase.DeleteProjectMember(id, request.Members)
 	if err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -198,6 +211,7 @@ func (pc *ProjectController) GetAllProjectMember(c *gin.Context) {
 
 	members, err := pc.projectUsecase.GetAllProjectMember(id)
 	if err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -211,12 +225,14 @@ func (pc *ProjectController) UpdateProject(c *gin.Context) {
 	var request model.Project
 
 	if err := c.ShouldBindJSON(&request); err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	updatedProject, err := pc.projectUsecase.Update(request)
 	if err != nil {
+		log.Println(err.Error())
 		common.SendErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -231,6 +247,8 @@ func (pc *ProjectController) DeleteProject(c *gin.Context) {
 
 	err := pc.projectUsecase.Delete(id)
 	if err != nil {
+		log.Println(err.Error())
+
 		common.SendErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
