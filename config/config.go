@@ -3,7 +3,10 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 )
 
@@ -19,9 +22,17 @@ type DbConfig struct {
 type ApiConfig struct {
 	ApiPort string
 }
+type TokenConfig struct {
+	Issuer           string `json:"issuer"`
+	JwtSignatureKey  []byte `json:"jwt_signature_key"`
+	JwtSigningMethod *jwt.SigningMethodHMAC
+	JwtExpiresTime   time.Duration
+}
+
 type Config struct {
 	DbConfig
 	ApiConfig
+	TokenConfig
 }
 
 func (c *Config) ConfigConfiguration() error {
@@ -46,6 +57,15 @@ func (c *Config) ConfigConfiguration() error {
 	c.ApiConfig = ApiConfig{
 		ApiPort: os.Getenv("API_PORT"),
 	}
+
+	tokenExpire, _ := strconv.Atoi(os.Getenv("TOKEN_EXPIRE"))
+	c.TokenConfig = TokenConfig{
+		Issuer:           os.Getenv("JWT_ISSUER"),
+		JwtSignatureKey:  []byte(os.Getenv("JWT_SIGNATURE_KEY")),
+		JwtSigningMethod: jwt.SigningMethodHS256,
+		JwtExpiresTime:   time.Duration(tokenExpire) * time.Hour,
+	}
+
 	return nil
 }
 

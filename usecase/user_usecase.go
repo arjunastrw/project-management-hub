@@ -24,18 +24,17 @@ type userUseCase struct {
 }
 
 func (a *userUseCase) FindAllUser(page int, size int) ([]model.User, shared_model.Paging, error) {
-
-	// Validate Role
-	//if user.Role != "ADMIN" {
-	//	return []model.User{}, shared_model.Paging{}, fmt.Errorf("Can't Access this Resource!")
-	//}
+	// IF USER ROLE ISN'T ADMIN CANT GET ALL USER
 
 	users, paging, err := a.userRepository.GetAll(page, size)
 	if err != nil {
+
 		return []model.User{}, shared_model.Paging{}, err
 	}
 
+	log.Println(users)
 	return users, paging, nil
+
 }
 
 func (a *userUseCase) FindUserById(id string) (model.User, error) {
@@ -44,6 +43,8 @@ func (a *userUseCase) FindUserById(id string) (model.User, error) {
 		return model.User{}, err
 	}
 
+	// IF ROLE ISN'T ADMIN CANT GET USER BY ID
+
 	// Check if user is not found
 	if user.Id == "" {
 
@@ -51,15 +52,12 @@ func (a *userUseCase) FindUserById(id string) (model.User, error) {
 	}
 
 	// User successfully found By ID
-
 	return user, nil
 }
 
 func (a *userUseCase) FindUserByEmail(email string) (model.User, error) {
-	// Validate Role
-	//if user.Role != "ADMIN" {
-	//	return model.User{}, fmt.Errorf("Can't Access this Resource!")
-	//}
+
+	// IF ROLE ISN'T ADMIN CANT GET USER BY EMAIL
 
 	user, err := a.userRepository.GetByEmail(email)
 	if err != nil {
@@ -79,10 +77,7 @@ func (a *userUseCase) FindUserByEmail(email string) (model.User, error) {
 
 func (a *userUseCase) CreateUser(payload model.User) (model.User, error) {
 
-	//// Validate Role
-	//if payload.Role != "ADMIN" {
-	//	return model.User{}, fmt.Errorf("Can't Access this Resource!")
-	//}
+	// IF ROLE ISN'T ADMIN CANT CREATE USER
 
 	// Validate email existence
 	existingUser, err := a.userRepository.GetByEmail(payload.Email)
@@ -90,7 +85,7 @@ func (a *userUseCase) CreateUser(payload model.User) (model.User, error) {
 		return model.User{}, err
 	}
 
-	if existingUser.Email != "" {
+	if existingUser.Email == "" {
 
 		return model.User{}, fmt.Errorf(" Email %s is already exist", payload.Email)
 	}
@@ -102,20 +97,22 @@ func (a *userUseCase) CreateUser(payload model.User) (model.User, error) {
 	}
 
 	// Create User Successfully
-
+	log.Printf("Create User Successfully: %+v", user)
 	return user, nil
 }
 
 func (a *userUseCase) UpdateUser(payload model.User) (model.User, error) {
-	//// Validate Role
-	//if currentUser.Role != "ADMIN" {
-	//	return model.User{}, fmt.Errorf("Unauthorized access: Only admin can perform this operation")
-	//}
+
+	// IF ROLE ISN'T ADMIN CANT UPDATE USER
 
 	// If the email is being updated, check for existence
 	if payload.Email != "" {
-		existingUser, _ := a.userRepository.GetByEmail(payload.Email)
-		if existingUser.Id != payload.Id {
+		existingUser, err := a.userRepository.GetByEmail(payload.Email)
+		if err != nil {
+			return model.User{}, err
+		}
+
+		if existingUser.Email != "" {
 
 			return model.User{}, fmt.Errorf(" Email %s is already exist", payload.Email)
 		}
@@ -124,7 +121,6 @@ func (a *userUseCase) UpdateUser(payload model.User) (model.User, error) {
 	// Update User
 	user, err := a.userRepository.Update(payload)
 	if err != nil {
-		log.Println("errorusecase")
 		return model.User{}, err
 	}
 
@@ -135,10 +131,7 @@ func (a *userUseCase) UpdateUser(payload model.User) (model.User, error) {
 
 func (a *userUseCase) DeleteUser(id string) error {
 
-	//// Validate Role
-	//if user.Role != "ADMIN" {
-	//	return fmt.Errorf("Can't Access this Resource!")
-	//}
+	// IF ROLE ISN'T ADMIN CANT DELETE USER
 
 	err := a.userRepository.Delete(id)
 	if err != nil {

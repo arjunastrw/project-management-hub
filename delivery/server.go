@@ -6,6 +6,8 @@ import (
 
 	"enigma.com/projectmanagementhub/config"
 	"enigma.com/projectmanagementhub/delivery/controller"
+	"enigma.com/projectmanagementhub/delivery/middleware"
+	"enigma.com/projectmanagementhub/shared/service"
 
 	"enigma.com/projectmanagementhub/repository"
 	"enigma.com/projectmanagementhub/usecase"
@@ -13,14 +15,14 @@ import (
 )
 
 type Server struct {
-	userUC    usecase.UserUseCase
-	taskUC    usecase.TaskUsecase
-	projectUC usecase.ProjectUseCase
-	reportUC  usecase.ReportUsecase
-	//authUC     usecase.AuthUsecase
-	engine *gin.Engine
-	//jwtService service.JwtService
-	host string
+	userUC     usecase.UserUseCase
+	taskUC     usecase.TaskUsecase
+	projectUC  usecase.ProjectUseCase
+	reportUC   usecase.ReportUsecase
+	authUC     usecase.AuthUsecase
+	engine     *gin.Engine
+	jwtService service.JwtService
+	host       string
 }
 
 func (s *Server) Run() {
@@ -32,12 +34,12 @@ func (s *Server) Run() {
 
 func (s *Server) initRoute() {
 	rg := s.engine.Group("/pmh-api/v1")
-	//authMiddleware := middleware.NewAuthMiddleware(s.jwtService)
-	controller.NewUserController(rg, s.userUC /*authMiddleware,*/).Route()
+	authMiddleware := middleware.NewAuthMiddleware(s.jwtService)
+	controller.NewUserController(rg, authMiddleware, s.userUC).Route()
 	controller.NewTaskController(s.taskUC, rg).Route()
 	controller.NewProjectController(s.projectUC, rg).Route()
 	controller.NewReportController(s.reportUC, rg).Route()
-	//controller.NewAuthController(s.authUC, rg).Route()
+	controller.NewAuthController(s.authUC, rg).Route()
 }
 
 func NewServer() *Server {
@@ -63,22 +65,22 @@ func NewServer() *Server {
 	UserUseCase := usecase.NewUserUseCase(userRepository)
 	taskUsecase := usecase.NewTaskUsecase(taskRepository)
 	projectUsecase := usecase.NewProjectUseCase(projectRepository)
-	reportUsecase := usecase.NewReportUsecase(reportRepository)
+	reportUsecase := usecase.NewReportUsecase(reportRepository, taskRepository)
 
-	//jwtService := service.NewJwtService(cfg.TokenConfig)
-	//authUsecase := usecase.NewAuthUsecase(UserUseCase, jwtService)
+	jwtService := service.NewJwtService(cfg.TokenConfig)
+	authUsecase := usecase.NewAuthUsecase(UserUseCase, jwtService)
 
 	engine := gin.Default()
 	host := cfg.ApiPort
 
 	return &Server{
-		userUC:    UserUseCase,
-		taskUC:    taskUsecase,
-		projectUC: projectUsecase,
-		reportUC:  reportUsecase,
-		engine:    engine,
-		host:      host,
-		//authUC:     authUsecase,
-		//jwtService: jwtService,
+		userUC:     UserUseCase,
+		taskUC:     taskUsecase,
+		projectUC:  projectUsecase,
+		reportUC:   reportUsecase,
+		engine:     engine,
+		host:       host,
+		authUC:     authUsecase,
+		jwtService: jwtService,
 	}
 }

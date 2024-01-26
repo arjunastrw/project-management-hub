@@ -42,3 +42,13 @@ func SendSuccesResponse(c *gin.Context, code int, message string, data interface
 		Data:    data,
 	})
 }
+
+func SendCreatedResponse(ctx *gin.Context, data interface{}, message string) {
+	ctx.JSON(http.StatusCreated, shared_model.SingleResponse{
+		Status: shared_model.Status{
+			Code:    http.StatusCreated,
+			Message: message,
+		},
+		Data: data,
+	})
+}
