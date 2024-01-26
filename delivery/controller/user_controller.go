@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -24,12 +25,12 @@ func NewUserController(rg *gin.RouterGroup, userUC usecase.UserUseCase) *UserCon
 }
 
 func (a *UserController) Route() {
-	a.rg.GET("/users/list", a.FindAllUser)
+	a.rg.GET("/user/list", a.FindAllUser)
 	a.rg.GET("/user/:id", a.FindUserById)
 	a.rg.GET("/user/email/:email", a.FindUserByEmail)
-	a.rg.POST("/users", a.CreateUser)
-	a.rg.PUT("/user/:id", a.UpdateUser)
-	a.rg.DELETE("/user/:id", a.DeleteUser)
+	a.rg.POST("/user/create", a.CreateUser)
+	a.rg.PUT("/user/update", a.UpdateUser)
+	a.rg.DELETE("/user/delete/:id", a.DeleteUser)
 }
 
 func (a *UserController) FindAllUser(c *gin.Context) {
@@ -45,7 +46,6 @@ func (a *UserController) FindAllUser(c *gin.Context) {
 	}
 
 	// Log for Get User Success
-	a.logger.Infof("Success Get Resource")
 
 	var resp []interface{}
 
@@ -168,84 +168,28 @@ func (a *UserController) CreateUser(c *gin.Context) {
 // }
 
 func (a *UserController) UpdateUser(c *gin.Context) {
-	// Get ID from URL parameter
-	id := c.Param("id")
-
-	// Validate ID
-	if id == "" {
-		c.JSON(400, gin.H{
-			"message": "ID is required",
-		})
-		return
-	}
 
 	// Bind JSON request ke model User
-	updatedUser := model.User{}
-	err := c.ShouldBindJSON(&updatedUser)
+	var user model.User
+	err := c.ShouldBindJSON(&user)
 	if err != nil {
 		// Log For Bad Request
 
-		c.JSON(400, gin.H{
-			"message": "Failed to bind JSON: " + err.Error(),
-		})
+		common.SendErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
-	}
-
-	// Validate if ID exist
-	existingUser, err := a.userUC.FindUserById(id)
-	if err != nil {
-		// Log if ID not found or Error
-
-		c.JSON(500, gin.H{
-			"message": "Internal Server Error",
-		})
-		return
-	}
-
-	// Validate If ID notfound
-	if err != nil {
-		common.SendErrorResponse(c, 404, "User with id "+id+" not found")
-		return
-	}
-
-	// Validate If New Email same with another User
-	if updatedUser.Email != existingUser.Email {
-		existingUserByEmail, err := a.userUC.FindUserByEmail(updatedUser.Email)
-		if err != nil {
-			// Log if Email not found or Error
-
-			c.JSON(500, gin.H{
-				"message": "Internal Server Error",
-			})
-			return
-		}
-
-		// Validate If Email already using by another user
-		if existingUser.Email != "" {
-			common.SendErrorResponse(c, 400, " Email "+existingUserByEmail.Email+" already exist")
-			return
-		}
 	}
 
 	// Update User
-	updatedUser.Id = existingUser.Id
-	updatedUser, err = a.userUC.UpdateUser(updatedUser)
+	updatedUser, err := a.userUC.UpdateUser(user)
 	if err != nil {
 		// Log For Update User Error
-
-		c.JSON(500, gin.H{
-			"message": "Internal Server Error",
-		})
+		common.SendErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	// Log For Success
 
-	c.JSON(200, gin.H{
-		"code":    200,
-		"message": "User updated successfully",
-		"data":    updatedUser,
-	})
+	common.SendSingleResponse(c, updatedUser, "Success")
 }
 
 func (a *UserController) DeleteUser(c *gin.Context) {

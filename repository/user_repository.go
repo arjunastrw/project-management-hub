@@ -121,8 +121,7 @@ func (u *userRepository) CreateUser(payload model.User) (model.User, error) {
 // Update implements User.
 func (u *userRepository) Update(payload model.User) (model.User, error) {
 	var user model.User
-
-	err := u.db.QueryRow(config.UpdateUser, payload.Id).Scan(&user.Id, &user.Name, &user.Email, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+	err := u.db.QueryRow(config.UpdateUser, payload.Id, payload.Name, payload.Email, payload.Password, payload.Role).Scan(&user.Id, &user.Name, &user.Email, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		log.Println("user_repository.QueryRow", err.Error())
 		return model.User{}, err

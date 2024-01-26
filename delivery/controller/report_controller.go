@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"enigma.com/projectmanagementhub/model"
+	"enigma.com/projectmanagementhub/shared/common"
 	"enigma.com/projectmanagementhub/usecase"
 	"github.com/gin-gonic/gin"
 )
@@ -13,7 +14,7 @@ type ReportHandler struct {
 	rg       *gin.RouterGroup
 }
 
-func NewReportHandler(reportUC usecase.ReportUsecase, rg *gin.RouterGroup) *ReportHandler {
+func NewReportController(reportUC usecase.ReportUsecase, rg *gin.RouterGroup) *ReportHandler {
 	return &ReportHandler{
 		reportUC: reportUC,
 		rg:       rg,
@@ -72,14 +73,14 @@ func (h *ReportHandler) DeleteReportByIdHandler(c *gin.Context) {
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"code":    http.StatusBadRequest,
-			"message": "failed to delete task",
+			"message": "failed to delete report",
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    http.StatusOK,
-		"message": "succesfully deleted tsak",
+		"message": "succesfully deleted report",
 	})
 }
 
@@ -99,20 +100,14 @@ func (h *ReportHandler) GetReportByTaskIdHandler(c *gin.Context) {
 		response = append(response, v)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"status": gin.H{
-			"code":    http.StatusOK,
-			"message": "OK",
-		},
-		"data": response,
-	})
+	common.SendSuccesResponse(c, http.StatusOK, "Succes", response)
 
 }
 
 func (h *ReportHandler) GetReportByUserIdHandler(c *gin.Context) {
 	userId := c.Query("userId")
 
-	reports, err := h.reportUC.GetReportByTaskId(userId)
+	reports, err := h.reportUC.GetReportByUserId(userId)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"code":    http.StatusInternalServerError,
@@ -125,21 +120,15 @@ func (h *ReportHandler) GetReportByUserIdHandler(c *gin.Context) {
 		response = append(response, v)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"status": gin.H{
-			"code":    http.StatusOK,
-			"message": "OK",
-		},
-		"data": response,
-	})
+	common.SendSuccesResponse(c, http.StatusOK, "Succes", response)
 
 }
 
 // rg meng group end-point2
 func (h *ReportHandler) Route() {
-	h.rg.GET("/get/")
+	h.rg.GET("/get/reporttaskid", h.GetReportByTaskIdHandler)
 	h.rg.GET("/get/reportuserid", h.GetReportByUserIdHandler)
 	h.rg.POST("/createreport", h.CreateNewReportHandler)
 	h.rg.PUT("/updatereport", h.UpdateReportHandler)
-	h.rg.DELETE("/delettask", h.DeleteReportByIdHandler)
+	h.rg.DELETE("/deletedreport", h.DeleteReportByIdHandler)
 }

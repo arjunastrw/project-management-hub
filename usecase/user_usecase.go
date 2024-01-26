@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"fmt"
+	"log"
 
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/repository"
@@ -101,7 +102,7 @@ func (a *userUseCase) CreateUser(payload model.User) (model.User, error) {
 	}
 
 	// Create User Successfully
-	a.logger.Infof("Create User Successfully: %+v", user)
+
 	return user, nil
 }
 
@@ -113,12 +114,8 @@ func (a *userUseCase) UpdateUser(payload model.User) (model.User, error) {
 
 	// If the email is being updated, check for existence
 	if payload.Email != "" {
-		existingUser, err := a.userRepository.GetByEmail(payload.Email)
-		if err != nil {
-			return model.User{}, err
-		}
-
-		if existingUser.Email != "" {
+		existingUser, _ := a.userRepository.GetByEmail(payload.Email)
+		if existingUser.Id != payload.Id {
 
 			return model.User{}, fmt.Errorf(" Email %s is already exist", payload.Email)
 		}
@@ -127,6 +124,7 @@ func (a *userUseCase) UpdateUser(payload model.User) (model.User, error) {
 	// Update User
 	user, err := a.userRepository.Update(payload)
 	if err != nil {
+		log.Println("errorusecase")
 		return model.User{}, err
 	}
 

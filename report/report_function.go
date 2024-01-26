@@ -11,30 +11,31 @@ import (
 	"enigma.com/projectmanagementhub/model"
 )
 
+// ReportToTXT adalah interface untuk menulis laporan ke file teks.
 type ReportToTXT interface {
 	WriteReport(report model.ShowReport) error
 }
 
-type reportToTXT struct {
-}
+type AreportToTXT struct{}
 
-func (r *reportToTXT) WriteReport(report model.ShowReport) error {
+// WriteReport menulis laporan ke file teks.
+func (r *AreportToTXT) WriteReport(report model.ShowReport) error {
 	// Membuat nama file dengan format "YYYY-MM-DD_HH-MM-SS.txt" di dalam folder
-	folderPath := "D:/Final_project_enigma/project-management-hub/report/report_result"
+	folderPath := "D:/Final_project_enigma/project_management_hub/project-management-hub/report/report-result"
 	fileName := filepath.Join(folderPath, time.Now().Format("2006-01-02")+".txt")
 
 	// Membuat folder jika belum ada
 	if err := os.MkdirAll(folderPath, os.ModePerm); err != nil {
-		return err
+		return fmt.Errorf("gagal membuat folder: %v", err)
 	}
+
 	// Mengecek apakah file untuk hari tersebut sudah ada atau belum
 	_, err := os.Stat(fileName)
 	if os.IsNotExist(err) {
 		// Jika file belum ada, buat file baru
-		file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY, 0666)
+		file, err := os.Create(fileName)
 		if err != nil {
-			fmt.Println(err)
-			return err
+			return fmt.Errorf("gagal membuat file: %v", err)
 		}
 		defer file.Close()
 
@@ -43,8 +44,7 @@ func (r *reportToTXT) WriteReport(report model.ShowReport) error {
 		// Menggunakan encoding/json untuk mengubah struct Report menjadi JSON
 		jsonData, err := json.Marshal(report.Content)
 		if err != nil {
-			fmt.Println(err)
-			return err
+			return fmt.Errorf("gagal mengonversi ke JSON: %v", err)
 		}
 
 		writer.WriteString(fmt.Sprintf("Date: %s\n%s\n", report.Date.Format("2006-01-02"), jsonData))
@@ -54,30 +54,35 @@ func (r *reportToTXT) WriteReport(report model.ShowReport) error {
 
 		fmt.Printf("File '%s' telah dibuat.\n", fileName)
 	} else if err == nil {
-		// Jika file sudah ada, gunakan file tersebut
-		file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY, 0666)
+		// Jika file sudah ada, baca kontennya, tambahkan data baru, dan tulis kembali
+		file, err := os.OpenFile(fileName, os.O_RDWR, 0666)
 		if err != nil {
-			return err
+			return fmt.Errorf("gagal membuka file: %v", err)
 		}
 		defer file.Close()
 
-		writer := bufio.NewWriter(file)
-
-		// Menggunakan encoding/json untuk mengubah struct Report menjadi JSON
-		jsonData, err := json.Marshal(report.Content)
-		if err != nil {
-			return err
+		// Baca konten lama
+		scanner := bufio.NewScanner(file)
+		var oldContent string
+		for scanner.Scan() {
+			oldContent += scanner.Text() + "\n"
 		}
 
-		writer.WriteString(fmt.Sprintf("Date: %s\n%s\n", report.Date.Format("2006-01-02"), jsonData))
+		// Tambahkan data baru
+		jsonData, err := json.Marshal(report.Content)
+		if err != nil {
+			return fmt.Errorf("gagal mengonversi ke JSON: %v", err)
+		}
+		newContent := fmt.Sprintf("Date: %s\n%s\n\n%s", time.Now().Format("2006-01-02"), jsonData, oldContent)
 
-		writer.WriteString("\n")
-		writer.Flush()
+		// Pindahkan kursor ke awal file dan tulis konten baru
+		file.Seek(0, 0)
+		file.Truncate(0)
+		file.WriteString(newContent)
 
-		fmt.Printf("File '%s' has created.\n", fileName)
+		fmt.Printf("File '%s' telah diperbarui.\n", fileName)
 	} else {
-		fmt.Println(err)
-		return err
+		return fmt.Errorf("gagal mendapatkan info file: %v", err)
 	}
 
 	return nil
