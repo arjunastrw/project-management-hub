@@ -63,7 +63,7 @@ func NewServer() *Server {
 
 	//inject repository ke usecase
 	UserUseCase := usecase.NewUserUseCase(userRepository)
-	taskUsecase := usecase.NewTaskUsecase(taskRepository)
+	taskUsecase := usecase.NewTaskUsecase(taskRepository, userRepository, projectRepository)
 	projectUsecase := usecase.NewProjectUseCase(projectRepository)
 	reportUsecase := usecase.NewReportUsecase(reportRepository, taskRepository)
 

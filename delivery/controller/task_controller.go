@@ -32,7 +32,7 @@ func (t *TaskController) Route() {
 	t.rg.GET("/tasks/getbyid/:id", t.authMiddleware.RequireToken("ADMIN", "MANAGER", "TEAM MEMBER"), t.GetTaskById)
 	t.rg.GET("/tasks/getbyprojectid/:id", t.authMiddleware.RequireToken("ADMIN", "MANAGER", "TEAM MEMBER"), t.GetTaskByProjectId)
 	t.rg.POST("/tasks/create", t.authMiddleware.RequireToken("MANAGER"), t.CreateTask)
-	t.rg.PUT("/tasks/update", t.authMiddleware.RequireToken("MANAGER", "TEAM MEMBER"), t.UpdateTask)
+	t.rg.PUT("/tasks/update/:id", t.authMiddleware.RequireToken("MANAGER", "TEAM MEMBER"), t.UpdateTask)
 	t.rg.DELETE("/tasks/delete/:id", t.authMiddleware.RequireToken("MANAGER"), t.DeleteTask)
 }
 
@@ -107,6 +107,7 @@ func (t *TaskController) GetAllTask(c *gin.Context) {
 }
 
 func (t *TaskController) UpdateTask(c *gin.Context) {
+	userId := c.Param("id")
 	var newtask model.Task
 	if err := c.ShouldBind(&newtask); err != nil {
 		common.SendErrorResponse(c, http.StatusBadRequest, err.Error())
@@ -114,7 +115,7 @@ func (t *TaskController) UpdateTask(c *gin.Context) {
 	}
 
 	//disini cekrole if manager >> updattaskbymanager, if pic >> updatetaskbymember
-	task, err := t.taskUC.UpdateTaskByManager(newtask)
+	task, err := t.taskUC.UpdateTask(userId, newtask)
 	if err != nil {
 		common.SendErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
