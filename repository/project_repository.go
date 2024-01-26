@@ -185,6 +185,30 @@ func (p *projectRepository) GetById(id string) (model.Project, error) {
 		log.Println("project_repository.QueryRow", err.Error())
 		return model.Project{}, err
 	}
+	project.Members, err = p.GetAllProjectMember(id)
+	if err != nil {
+		log.Println("currently no member in this project")
+	}
+
+	var tasks []model.Task
+
+	row, err := p.db.Query(config.GetTaskByProjectId, id)
+	if err != nil {
+		log.Println("currently no task in this project")
+	}
+
+	for row.Next() {
+		task := model.Task{}
+		err := row.Scan(&task.Id, &task.Name, &task.Status, &task.Approval, &task.PersonInCharge, &task.Deadline, &task.ProjectId, &task.ApprovalDate, &task.Feedback, &task.CreatedAt, &task.UpdatedAt)
+		if err != nil {
+			log.Println("taskRepository.Rows.Next", err.Error())
+		}
+
+		tasks = append(tasks, task)
+	}
+
+	project.Tasks = tasks
+
 	return project, nil
 }
 

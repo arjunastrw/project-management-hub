@@ -3,132 +3,107 @@ package controller
 import (
 	"net/http"
 
+	"enigma.com/projectmanagementhub/delivery/middleware"
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/shared/common"
 	"enigma.com/projectmanagementhub/usecase"
 	"github.com/gin-gonic/gin"
 )
 
-type ReportHandler struct {
-	reportUC usecase.ReportUsecase
-	rg       *gin.RouterGroup
+type ReportController struct {
+	reportUC       usecase.ReportUsecase
+	authMiddleware middleware.AuthMiddleware
+	rg             *gin.RouterGroup
 }
 
-func NewReportController(reportUC usecase.ReportUsecase, rg *gin.RouterGroup) *ReportHandler {
-	return &ReportHandler{
-		reportUC: reportUC,
-		rg:       rg,
+func NewReportController(reportUC usecase.ReportUsecase, authMiddleware middleware.AuthMiddleware, rg *gin.RouterGroup) *ReportController {
+	return &ReportController{
+		reportUC:       reportUC,
+		authMiddleware: authMiddleware,
+		rg:             rg,
 	}
 }
 
-func (h *ReportHandler) CreateNewReportHandler(c *gin.Context) {
+func (h *ReportController) CreateNewReportController(c *gin.Context) {
 	var newReport model.Report
 	err := c.ShouldBind(&newReport)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		common.SendErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	newReport, err = h.reportUC.CreateReport(newReport)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		common.SendErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	c.JSON(http.StatusCreated, gin.H{
-		"code":    http.StatusCreated,
-		"message": "created report succesfully",
-		"Data":    newReport,
-	})
+	common.SendSingleResponse(c, newReport, "Success")
 }
 
-func (h *ReportHandler) UpdateReportHandler(c *gin.Context) {
+func (h *ReportController) UpdateReportController(c *gin.Context) {
 	var updatedReport model.Report
 	err := c.ShouldBind(&updatedReport)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		common.SendErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	updatedReport, err = h.reportUC.UpdateReport(updatedReport)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":    http.StatusBadRequest,
-			"message": "failed to update report",
-			"error":   err,
-		})
+		common.SendErrorResponse(c, http.StatusBadRequest, "failed to update report "+err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code":    http.StatusOK,
-		"message": "succesfully updated report",
-		"data":    updatedReport,
-	})
+	common.SendSingleResponse(c, updatedReport, "succesfully updated report")
 }
 
-func (h *ReportHandler) DeleteReportByIdHandler(c *gin.Context) {
+func (h *ReportController) DeleteReportByIdController(c *gin.Context) {
 	id := c.Query("id")
 	err := h.reportUC.DeleteReportById(id)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":    http.StatusBadRequest,
-			"message": "failed to delete report",
-		})
+		common.SendErrorResponse(c, http.StatusBadRequest, "failed to delete report "+err.Error())
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"code":    http.StatusOK,
-		"message": "succesfully deleted report",
-	})
+	common.SendSingleResponse(c, "is null", "succesfully deleted report")
 }
 
-func (h *ReportHandler) GetReportByTaskIdHandler(c *gin.Context) {
+func (h *ReportController) GetReportByTaskIdController(c *gin.Context) {
 	taskId := c.Query("taskId")
 
 	reports, err := h.reportUC.GetReportByTaskId(taskId)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"code":    http.StatusInternalServerError,
-			"message": err.Error(),
-		})
+		common.SendErrorResponse(c, http.StatusInternalServerError, "failed to get report by task id "+err.Error())
 		return
 	}
 	var response []interface{}
 	for _, v := range reports {
 		response = append(response, v)
 	}
-
-	common.SendSuccesResponse(c, http.StatusOK, "Succes", response)
+	common.SendSingleResponse(c, response, "Succes to get report by task id")
 
 }
 
-func (h *ReportHandler) GetReportByUserIdHandler(c *gin.Context) {
+func (h *ReportController) GetReportByUserIdController(c *gin.Context) {
 	userId := c.Query("userId")
 
 	reports, err := h.reportUC.GetReportByUserId(userId)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"code":    http.StatusInternalServerError,
-			"message": err.Error(),
-		})
+		common.SendErrorResponse(c, http.StatusInternalServerError, "failed to get report by user id "+err.Error())
 		return
 	}
 	var response []interface{}
 	for _, v := range reports {
 		response = append(response, v)
 	}
-
-	common.SendSuccesResponse(c, http.StatusOK, "Succes", response)
+	common.SendSingleResponse(c, response, "Succes to get report by user id")
 
 }
 
 // rg meng group end-point2
-func (h *ReportHandler) Route() {
-	h.rg.GET("/get/reporttaskid", h.GetReportByTaskIdHandler)
-	h.rg.GET("/get/reportuserid", h.GetReportByUserIdHandler)
-	h.rg.POST("/createreport", h.CreateNewReportHandler)
-	h.rg.PUT("/updatereport", h.UpdateReportHandler)
-	h.rg.DELETE("/deletedreport", h.DeleteReportByIdHandler)
+func (h *ReportController) Route() {
+	h.rg.GET("/get/reporttaskid", h.authMiddleware.RequireToken("ADMIN", "MANAGER"), h.GetReportByTaskIdController)
+	h.rg.GET("/get/reportuserid", h.authMiddleware.RequireToken("ADMIN", "MANAGER"), h.GetReportByUserIdController)
+	h.rg.POST("/createreport", h.authMiddleware.RequireToken("ADMIN", "MANAGER"), h.CreateNewReportController)
+	h.rg.PUT("/updatereport", h.authMiddleware.RequireToken("TEAM MEMBER"), h.UpdateReportController)
+	h.rg.DELETE("/deletedreport", h.authMiddleware.RequireToken("ADMIN"), h.DeleteReportByIdController)
 }

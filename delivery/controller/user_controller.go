@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"enigma.com/projectmanagementhub/delivery/middleware"
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/shared/common"
 	"enigma.com/projectmanagementhub/usecase"
@@ -11,24 +12,26 @@ import (
 )
 
 type UserController struct {
-	userUC usecase.UserUseCase
-	rg     *gin.RouterGroup
+	userUC         usecase.UserUseCase
+	authMiddleware middleware.AuthMiddleware
+	rg             *gin.RouterGroup
 }
 
-func NewUserController(rg *gin.RouterGroup, userUC usecase.UserUseCase) *UserController {
+func NewUserController(rg *gin.RouterGroup, authMiddleware middleware.AuthMiddleware, userUC usecase.UserUseCase) *UserController {
 	return &UserController{
-		userUC: userUC,
-		rg:     rg,
+		userUC:         userUC,
+		authMiddleware: authMiddleware,
+		rg:             rg,
 	}
 }
 
 func (a *UserController) Route() {
-	a.rg.GET("/user/list", a.FindAllUser)
-	a.rg.GET("/user/:id", a.FindUserById)
-	a.rg.GET("/user/email/:email", a.FindUserByEmail)
-	a.rg.POST("/user/create", a.CreateUser)
-	a.rg.PUT("/user/update", a.UpdateUser)
-	a.rg.DELETE("/user/delete/:id", a.DeleteUser)
+	a.rg.GET("/user/list", a.authMiddleware.RequireToken("ADMIN"), a.FindAllUser)
+	a.rg.GET("/user/:id", a.authMiddleware.RequireToken("ADMIN", "MANAGER", "TEAM MEMBER"), a.FindUserById)
+	a.rg.GET("/user/email/:email", a.authMiddleware.RequireToken("ADMIN", "MANAGER", "TEAM MEMBER"), a.FindUserByEmail)
+	a.rg.POST("/user/create", a.authMiddleware.RequireToken("ADMIN"), a.CreateUser)
+	a.rg.PUT("/user/update", a.authMiddleware.RequireToken("ADMIN"), a.UpdateUser)
+	a.rg.DELETE("/user/delete/:id", a.authMiddleware.RequireToken("ADMIN"), a.DeleteUser)
 }
 
 func (a *UserController) FindAllUser(c *gin.Context) {

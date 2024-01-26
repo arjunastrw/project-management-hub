@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"enigma.com/projectmanagementhub/delivery/middleware"
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/shared/common"
 	"enigma.com/projectmanagementhub/usecase"
@@ -13,28 +14,30 @@ import (
 
 type ProjectController struct {
 	projectUsecase usecase.ProjectUseCase
+	authMiddleware middleware.AuthMiddleware
 	rg             *gin.RouterGroup
 }
 
-func NewProjectController(projectUsecase usecase.ProjectUseCase, rg *gin.RouterGroup) *ProjectController {
+func NewProjectController(projectUsecase usecase.ProjectUseCase, authMiddleware middleware.AuthMiddleware, rg *gin.RouterGroup) *ProjectController {
 	return &ProjectController{
 		projectUsecase: projectUsecase,
+		authMiddleware: authMiddleware,
 		rg:             rg,
 	}
 }
 
 func (a *ProjectController) Route() {
-	a.rg.GET("/project", a.GetAll)
-	a.rg.GET("/project/id/:id", a.GetProjectById)
-	a.rg.GET("/project/deadline/:deadline", a.GetProjectsByDeadline)
-	a.rg.GET("/project/manager/:id", a.GetProjectsByManagerId)
-	a.rg.GET("/project/member/:id", a.GetProjectsByMemberId)
-	a.rg.POST("/project/create", a.CreateNewProject)
-	a.rg.POST("/project/addmember/:id", a.AddProjectMember)
-	a.rg.DELETE("/project/deletemember/:id", a.DeleteProjectMember)
-	a.rg.GET("/project/allmember/:id", a.GetAllProjectMember)
-	a.rg.PUT("/project/update", a.UpdateProject)
-	a.rg.DELETE("/project/delete/:id", a.DeleteProject)
+	a.rg.GET("/project", a.authMiddleware.RequireToken("ADMIN"), a.GetAll)
+	a.rg.GET("/project/id/:id", a.authMiddleware.RequireToken("ADMIN", "MANAGER", "TEAM MEMBER"), a.GetProjectById)
+	a.rg.GET("/project/deadline/:deadline", a.authMiddleware.RequireToken("ADMIN", "MANAGER"), a.GetProjectsByDeadline)
+	a.rg.GET("/project/manager/:id", a.authMiddleware.RequireToken("ADMIN", "MANAGER"), a.GetProjectsByManagerId)
+	a.rg.GET("/project/member/:id", a.authMiddleware.RequireToken("ADMIN", "MANAGER", "TEAM MEMBER"), a.GetProjectsByMemberId)
+	a.rg.POST("/project/create", a.authMiddleware.RequireToken("ADMIN"), a.CreateNewProject)
+	a.rg.POST("/project/addmember/:id", a.authMiddleware.RequireToken("ADMIN", "MANAGER"), a.AddProjectMember)
+	a.rg.DELETE("/project/deletemember/:id", a.authMiddleware.RequireToken("ADMIN", "MANAGER"), a.DeleteProjectMember)
+	a.rg.GET("/project/allmember/:id", a.authMiddleware.RequireToken("ADMIN", "MANAGER", "TEAM MEMBER"), a.GetAllProjectMember)
+	a.rg.PUT("/project/update", a.authMiddleware.RequireToken("ADMIN", "MANAGER"), a.UpdateProject)
+	a.rg.DELETE("/project/delete/:id", a.authMiddleware.RequireToken("ADMIN"), a.DeleteProject)
 
 }
 
@@ -59,16 +62,12 @@ func (pc *ProjectController) GetAll(c *gin.Context) {
 
 	log.Printf("Successfully retrieved projects")
 
-	response := map[string]interface{}{
-		"projects": projects,
-		"paging":   paging,
+	var projectsInterfaceSlice []interface{}
+	for _, project := range projects {
+		projectsInterfaceSlice = append(projectsInterfaceSlice, project)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code":    200,
-		"message": "Success Get Resource",
-		"data":    response,
-	})
+	common.SendPagedResponse(c, projectsInterfaceSlice, paging, "Success Get Resource")
 }
 
 func (pc *ProjectController) GetProjectById(c *gin.Context) {
@@ -81,15 +80,9 @@ func (pc *ProjectController) GetProjectById(c *gin.Context) {
 
 	log.Printf("succes Get Resource")
 
-	response := map[string]interface{}{
+	common.SendSingleResponse(c, map[string]interface{}{
 		"project": project,
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"code":    200,
-		"message": "Success Get Resource",
-		"data":    response,
-	})
+	}, "Success Get Resource")
 }
 
 func (pc *ProjectController) GetProjectsByDeadline(c *gin.Context) {
@@ -104,15 +97,7 @@ func (pc *ProjectController) GetProjectsByDeadline(c *gin.Context) {
 
 	log.Printf("Successfully retrieved projects by deadline: %s", deadline)
 
-	response := map[string]interface{}{
-		"projects": projects,
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"code":    200,
-		"message": "Success Get Resource",
-		"data":    response,
-	})
+	common.SendSingleResponse(c, projects, "Success Get Resource")
 }
 
 func (pc *ProjectController) GetProjectsByManagerId(c *gin.Context) {
@@ -182,10 +167,7 @@ func (pc *ProjectController) AddProjectMember(c *gin.Context) {
 
 	log.Printf("Successfully added project members to project ID: %s", id)
 
-	c.JSON(http.StatusOK, gin.H{
-		"code":    200,
-		"message": "Success Add Project Members",
-	})
+	common.SendSingleResponse(c, nil, "Success")
 }
 
 func (pc *ProjectController) DeleteProjectMember(c *gin.Context) {
@@ -208,10 +190,7 @@ func (pc *ProjectController) DeleteProjectMember(c *gin.Context) {
 
 	log.Printf("Successfully deleted project members from project ID: %s", id)
 
-	c.JSON(http.StatusOK, gin.H{
-		"code":    200,
-		"message": "Success Delete Project Members",
-	})
+	common.SendSingleResponse(c, nil, "Success")
 }
 
 func (pc *ProjectController) GetAllProjectMember(c *gin.Context) {
@@ -225,15 +204,7 @@ func (pc *ProjectController) GetAllProjectMember(c *gin.Context) {
 
 	log.Printf("Successfully retrieved all project members for project ID: %s", id)
 
-	response := map[string]interface{}{
-		"members": members,
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"code":    200,
-		"message": "Success Get All Project Members",
-		"data":    response,
-	})
+	common.SendSingleResponse(c, members, "Success Get Resource")
 }
 
 func (pc *ProjectController) UpdateProject(c *gin.Context) {
@@ -252,15 +223,7 @@ func (pc *ProjectController) UpdateProject(c *gin.Context) {
 
 	log.Printf("Successfully updated project with ID: %s", updatedProject.Id)
 
-	response := map[string]interface{}{
-		"project": updatedProject,
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"code":    200,
-		"message": "Success Update Project",
-		"data":    response,
-	})
+	common.SendSingleResponse(c, updatedProject, "Success Get Resource")
 }
 
 func (pc *ProjectController) DeleteProject(c *gin.Context) {
@@ -274,8 +237,5 @@ func (pc *ProjectController) DeleteProject(c *gin.Context) {
 
 	log.Printf("Successfully deleted project with ID: %s", id)
 
-	c.JSON(http.StatusOK, gin.H{
-		"code":    200,
-		"message": "Success Delete Project",
-	})
+	common.SendSingleResponse(c, nil, "Success")
 }
