@@ -174,7 +174,7 @@ func (a *UserRepositoryTestSuite) TestDeleteUser_Success() {
 	a.NoError(err)
 }
 
-// Test Delete Failed
+// Test Delete Failedcl
 func (a *UserRepositoryTestSuite) TestDeleteUser_Failed() {
 	// Expected error message
 	expectedError := errors.New("delete user failed")
