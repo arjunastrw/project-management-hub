@@ -7,6 +7,7 @@ import (
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/repository"
 	"enigma.com/projectmanagementhub/shared/shared_model"
+	"github.com/sirupsen/logrus"
 )
 
 type UserUseCase interface {
