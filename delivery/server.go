@@ -35,8 +35,8 @@ func (s *Server) initRoute() {
 	//authMiddleware := middleware.NewAuthMiddleware(s.jwtService)
 	controller.NewUserController(rg, s.userUC).Route()
 	controller.NewTaskController(s.taskUC, rg).Route()
-	controller.NewProjectController(s.projectUC, rg).Route()
-	controller.NewReportController(s.reportUC, rg).Route()
+	//controller.NewProjectController(s.projectUC, rg).Route()
+	//controller.NewReportController(s.reportUC, rg).Route()
 	//controller.NewAuthController(s.authUC, rg).Route()
 }
 
@@ -56,14 +56,14 @@ func NewServer() *Server {
 	//inject db ke repository
 	taskRepository := repository.NewTaskRepository(db)
 	userRepository := repository.NewUserRepository(db)
-	projectRepository := repository.NewProjectRepository(db)
-	reportRepository := repository.NewReportRepository(db)
+	//projectRepository := repository.NewProjectRepository(db)
+	//reportRepository := repository.NewReportRepository(db)
 
 	//inject repository ke usecase
 	UserUseCase := usecase.NewUserUseCase(userRepository)
 	taskUsecase := usecase.NewTaskUsecase(taskRepository)
-	projectUsecase := usecase.NewProjectUseCase(projectRepository)
-	reportUsecase := usecase.NewReportUsecase(reportRepository)
+	//projectUsecase := usecase.NewProjectUseCase(projectRepository)
+	//reportUsecase := usecase.NewReportUseCase(reportRepository)
 
 	//jwtService := service.NewJwtService(cfg.TokenConfig)
 	//authUsecase := usecase.NewAuthUsecase(UserUseCase, jwtService)
