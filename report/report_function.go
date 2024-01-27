@@ -13,15 +13,15 @@ import (
 
 // ReportToTXT adalah interface untuk menulis laporan ke file teks.
 type ReportToTXT interface {
-	WriteReport(report model.ShowReport) error
+	WriteReport(report model.ShowReport, status string) error
 }
 
 type AreportToTXT struct{}
 
 // WriteReport menulis laporan ke file teks.
-func (r *AreportToTXT) WriteReport(report model.ShowReport) error {
-	// Membuat nama file dengan format "YYYY-MM-DD_HH-MM-SS.txt" di dalam folder
-	folderPath := "D:/Final_project_enigma/project_management_hub/project-management-hub/report/report-result"
+func (r *AreportToTXT) WriteReport(report model.ShowReport, status string) error {
+	// Membuat nama file dengan format "YYYY-MM-DD.txt" di dalam folder
+	folderPath := "D:/final_project_enigma2/project-management-hub/report/report-result"
 	fileName := filepath.Join(folderPath, time.Now().Format("2006-01-02")+".txt")
 
 	// Membuat folder jika belum ada
@@ -42,12 +42,22 @@ func (r *AreportToTXT) WriteReport(report model.ShowReport) error {
 		writer := bufio.NewWriter(file)
 
 		// Menggunakan encoding/json untuk mengubah struct Report menjadi JSON
-		jsonData, err := json.Marshal(report.Content)
+		jsonOldData, err := json.Marshal(report.Content)
 		if err != nil {
 			return fmt.Errorf("gagal mengonversi ke JSON: %v", err)
 		}
 
-		writer.WriteString(fmt.Sprintf("Date: %s\n%s\n", report.Date.Format("2006-01-02"), jsonData))
+		// Check the status and set the appropriate message
+		var statusMessage string
+		if status == "create" {
+			statusMessage = "Create report"
+		} else if status == "update" {
+			statusMessage = "Update report"
+		} else if status == "delete" {
+			statusMessage = "Delete report"
+		}
+
+		writer.WriteString(fmt.Sprintf("%s\nDate: %s\n%s\n", statusMessage, time.Now().Format("2006-01-02"), jsonOldData))
 
 		writer.WriteString("\n")
 		writer.Flush()
@@ -69,11 +79,22 @@ func (r *AreportToTXT) WriteReport(report model.ShowReport) error {
 		}
 
 		// Tambahkan data baru
-		jsonData, err := json.Marshal(report.Content)
+		jsonOldData, err := json.Marshal(report.Content)
 		if err != nil {
 			return fmt.Errorf("gagal mengonversi ke JSON: %v", err)
 		}
-		newContent := fmt.Sprintf("Date: %s\n%s\n\n%s", time.Now().Format("2006-01-02"), jsonData, oldContent)
+
+		// Check the status and set the appropriate message
+		var statusMessage string
+		if status == "create" {
+			statusMessage = "Create report"
+		} else if status == "update" {
+			statusMessage = "Update report"
+		} else if status == "delete" {
+			statusMessage = "Delete report"
+		}
+
+		newContent := fmt.Sprintf("%s\nDate: %s\n%s\n\n%s", statusMessage, time.Now().Format("2006-01-02"), jsonOldData, oldContent)
 
 		// Pindahkan kursor ke awal file dan tulis konten baru
 		file.Seek(0, 0)
