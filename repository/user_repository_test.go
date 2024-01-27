@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"enigma.com/projectmanagementhub/model"
+	"enigma.com/projectmanagementhub/shared/shared_model"
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -26,10 +28,23 @@ func (a *UserRepositoryTestSuite) SetupTest() {
 }
 
 var userTest = model.User{
-	Id:        "a1",
+	Id:        "1",
 	Name:      "admin1",
 	Email:     "admin1#example.com",
-	Password:  "admin1",
+	Password:  "",
+	Role:      "ADMIN",
+	CreatedAt: time.Now(),
+	UpdatedAt: time.Now(),
+	DeletedAt: nil,
+	Project:   nil,
+	Task:      nil,
+}
+
+var userTestUpdate = model.User{
+	Id:        "1",
+	Name:      "admin1",
+	Email:     "adminganteng1@example.com",
+	Password:  "",
 	Role:      "ADMIN",
 	CreatedAt: time.Now(),
 	UpdatedAt: time.Now(),
@@ -39,9 +54,59 @@ var userTest = model.User{
 }
 
 // Test Get All User Success
-// func (a *UserRepositoryTestSuite) TestGetAllUser_Success() {
+func (a *UserRepositoryTestSuite) TestUserRepository_GetAll_Success() {
+	// Mock the SQL query expectations for GetAll.
+	rows := sqlmock.NewRows([]string{"id", "name", "email", "role", "created_at", "updated_at"}).
+		AddRow(userTest.Id, userTest.Name, userTest.Email, userTest.Role, userTest.CreatedAt, userTest.UpdatedAt)
+	a.mockSql.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, email, role, created_at, updated_at FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT $1 OFFSET $2`)).
+		WithArgs(10, 0).
+		WillReturnRows(rows)
+	a.mockSql.ExpectQuery(regexp.QuoteMeta(`SELECT COUNT(*) FROM users WHERE deleted_at IS NULL`)).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
-// }
+	// Call the GetAll method.
+	resultUsers, paging, err := a.repo.GetAll(1, 10)
+
+	// Assertions
+	assert.NoError(a.T(), err)
+	assert.Len(a.T(), resultUsers, 1)
+	assert.Equal(a.T(), userTest, resultUsers[0])
+	assert.Equal(a.T(), 1, paging.TotalRows)
+}
+
+// Test Get All User Failed
+func (a *UserRepositoryTestSuite) TestUserRepository_GetAll_Failed() {
+	a.mockSql.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, email, role, created_at, updated_at FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT $1 OFFSET $2`)).
+		WithArgs(10, 0).
+		WillReturnError(sql.ErrConnDone)
+
+	resultUsers, paging, err := a.repo.GetAll(1, 10)
+
+	// Assertions
+	assert.Error(a.T(), err)
+	assert.True(a.T(), errors.Is(err, sql.ErrConnDone))
+	assert.Empty(a.T(), resultUsers)
+	assert.Equal(a.T(), shared_model.Paging{}, paging)
+}
+
+// Test Get All User Error Row Scan
+func (a *UserRepositoryTestSuite) TestUserRepository_GetAll_ErrorOnRowScan() {
+	// Mock the SQL query expectations for GetAll with an error on row scan.
+	rows := sqlmock.NewRows([]string{"id", "name", "email", "role", "created_at", "updated_at"}).
+		AddRow("invalid_id", userTest.Name, userTest.Email, userTest.Role, userTest.CreatedAt, userTest.UpdatedAt)
+	a.mockSql.ExpectQuery(`ELECT id, name, email, role, created_at, updated_at FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT $1 OFFSET $2`).
+		WithArgs(10, 0).
+		WillReturnRows(rows)
+
+	// Call the GetAll method.
+	resultUsers, paging, err := a.repo.GetAll(1, 10)
+
+	// Assertions
+	assert.Error(a.T(), err)
+	assert.NotEmpty(a.T(), err.Error())
+	assert.Empty(a.T(), resultUsers)
+	assert.Equal(a.T(), shared_model.Paging{}, paging)
+}
 
 // Test Get By ID Success
 func (a *UserRepositoryTestSuite) TestGeUsertById_Success() {
@@ -120,42 +185,33 @@ func (a *UserRepositoryTestSuite) TestCreateUser_Failed() {
 	a.NotNil(actual)
 }
 
-// Test Update Success
-// func (a *UserRepositoryTestSuite) TestUpdateUser_Success() {
-// 	// Data pengguna yang akan di-update
-// 	userToUpdate := model.User{
-// 		Id:        "1",
-// 		Name:      "New Name",
-// 		Email:     "new.email@example.com",
-// 		Password:  "new_password",
-// 		Role:      "user",
-// 		CreatedAt: time.Now(),
-// 		UpdatedAt: time.Now(),
-// 	}
+// Test Update User Success
+func (a *UserRepositoryTestSuite) TestUpdateUser_Success() {
+	// Mock the SQL query expectations for UpdateTaskByManager.
+	rows := sqlmock.NewRows([]string{"id", "name", "email", "password", "role", "created_at", "updated_at"}).
+		AddRow(userTestUpdate.Id, userTestUpdate.Name, userTestUpdate.Email, userTestUpdate.Password, userTestUpdate.Role, userTestUpdate.CreatedAt, userTestUpdate.UpdatedAt)
+	a.mockSql.ExpectQuery(regexp.QuoteMeta(`UPDATE users SET name = $2, email = $3, password = $4, role = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL RETURNING id, name, email, password, role, created_at, updated_at`)).
+		WithArgs(userTestUpdate.Id, userTestUpdate.Name, userTestUpdate.Email, userTestUpdate.Password, userTestUpdate.Role).
+		WillReturnRows(rows)
 
-// 	// Expectation: SQL query update
-// 	a.mockSql.ExpectQuery("UPDATE users SET name=\\$2, email=\\$3, password=\\$4, role=\\$5, updated_at=\\$6 WHERE id=\\$1 AND deleted_at IS NULL RETURNING id, name, email, password, role, created_at, updated_at").
-// 		WithArgs(userToUpdate.Id, userToUpdate.Name, userToUpdate.Email, userToUpdate.Password, userToUpdate.Role, userToUpdate.UpdatedAt).
-// 		WillReturnRows(sqlmock.NewResult(1, 1)) // 1 row affected
-
-// 	// Memanggil metode UpdateUser
-// 	actual, err := a.repo.Update(userToUpdate)
-
-// 	// Verifikasi bahwa tidak ada error
-// 	a.NoError(err)
-
-// 	// Verifikasi bahwa hasil aktual sesuai dengan yang diharapkan
-// 	a.Equal(userToUpdate, actual)
-
-// 	// Verifikasi bahwa eksekusi ekspektasi query SQL sesuai
-// 	err = a.mockSql.ExpectationsWereMet()
-// 	a.NoError(err)
-// }
+	updatedUser, err := a.repo.Update(userTestUpdate)
+	assert.NoError(a.T(), err)
+	assert.Equal(a.T(), userTestUpdate, updatedUser)
+}
 
 // Test Update Failed
-// func (a *UserRepositoryTestSuite) TestUpdateUser_Failed() {
+func (a *UserRepositoryTestSuite) TestUpdateUser_Failed() {
+	rows := sqlmock.NewRows([]string{"id", "name", "email", "password", "role", "created_at", "updated_at"}).
+		AddRow(userTestUpdate.Id, "differentName", userTestUpdate.Email, userTestUpdate.Password, userTestUpdate.Role, userTestUpdate.CreatedAt, userTestUpdate.UpdatedAt)
+	a.mockSql.ExpectQuery(regexp.QuoteMeta(`UPDATE users SET name = $2, email = $3, password = $4, role = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL RETURNING id, name, email, password, role, created_at, updated_at`)).
+		WithArgs(userTestUpdate.Id, userTestUpdate.Name, userTestUpdate.Email, userTestUpdate.Password, userTestUpdate.Role).
+		WillReturnRows(rows)
 
-// }
+	updatedUser, err := a.repo.Update(userTestUpdate)
+	assert.NoError(a.T(), err)
+	assert.NotEqual(a.T(), userTestUpdate, updatedUser)
+
+}
 
 // Test Delete Success
 func (a *UserRepositoryTestSuite) TestDeleteUser_Success() {
