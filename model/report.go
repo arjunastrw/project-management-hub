@@ -12,6 +12,7 @@ type Report struct {
 	DeletedAt  *time.Time `json:"-"`
 }
 
+// Struktur untuk laporan yang ditampilkan
 type ShowReport struct {
 	Date    time.Time
 	Content Report

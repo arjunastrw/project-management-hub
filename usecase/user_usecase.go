@@ -26,6 +26,7 @@ func (a *userUseCase) FindAllUser(page int, size int) ([]model.User, shared_mode
 	users, paging, err := a.userRepository.GetAll(page, size)
 	if err != nil {
 
+		log.Println(err)
 		return []model.User{}, shared_model.Paging{}, err
 	}
 
@@ -75,6 +76,8 @@ func (a *userUseCase) CreateUser(payload model.User) (model.User, error) {
 	// Create new user
 	user, err := a.userRepository.CreateUser(payload)
 	if err != nil {
+
+		log.Println(err)
 		return model.User{}, err
 	}
 
@@ -102,11 +105,13 @@ func (a *userUseCase) UpdateUser(payload model.User) (model.User, error) {
 	// Update User
 	user, err := a.userRepository.Update(payload)
 	if err != nil {
+
+		log.Println(err)
 		return model.User{}, err
 	}
 
 	// Update User Successfully
-
+	log.Printf("Update User Successfully: %+v", user)
 	return user, nil
 }
 
@@ -118,11 +123,13 @@ func (a *userUseCase) DeleteUser(id string) error {
 
 	err := a.userRepository.Delete(id)
 	if err != nil {
+
+		log.Println(err)
 		return err
 	}
 
 	// Delete User Successfully
-
+	log.Printf("Delete User Successfully: %+v", id)
 	return nil
 }
 
