@@ -133,7 +133,7 @@ func (a *userUseCase) DeleteUser(id string) error {
 
 	if _, err := a.userRepository.GetById(id); err != nil {
 
-		log.Println("failed to delete user. user id invalid")
+		log.Println("failed to Delete User. user id invalid")
 		return fmt.Errorf("failed to delete user. user id invalid")
 	}
 
