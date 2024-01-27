@@ -33,7 +33,7 @@ const (
 	GetTaskByProjectId      = "SELECT id, name, status, approval, person_in_charge, deadline, project_id, approval_date, CASE WHEN feedback IS NULL THEN '-' ELSE feedback END, created_at, updated_at FROM tasks WHERE project_id=$1 AND deleted_at IS NULL"
 	CreateTask              = "INSERT INTO tasks(name, status, approval, person_in_charge, deadline, project_id, updated_at) VALUES ($1, 'In Progress', false, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING id, name, person_in_charge, deadline, project_id, created_at"
 	UpdateTaskByManager     = "UPDATE tasks SET name = $2, status = $3, approval = $4, person_in_charge = $5, deadline = $6, approval_date = CURRENT_TIMESTAMP, feedback = $7, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL RETURNING id, name, status, approval, person_in_charge, deadline, project_id, approval_date, CASE WHEN feedback IS NULL THEN '-' ELSE feedback END, created_at, updated_at"
-	UpdateTaskByMember      = "UPDATE tasks status = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND person_in_charge = $2 AND deleted_at IS NULL RETURNING id, name, status, approval, person_in_charge, deadline, project_id, approval_date, CASE WHEN feedback IS NULL THEN '-' ELSE feedback END, created_at, updated_at"
+	UpdateTaskByMember      = "UPDATE tasks SET status = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND person_in_charge = $2 AND deleted_at IS NULL RETURNING id, name, status, approval, person_in_charge, deadline, project_id, approval_date, CASE WHEN feedback IS NULL THEN '-' ELSE feedback END, created_at, updated_at"
 	DeleteTask              = "UPDATE tasks SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL"
 
 	// Reports

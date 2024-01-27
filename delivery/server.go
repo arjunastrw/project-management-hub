@@ -65,8 +65,8 @@ func NewServer() *Server {
 
 	//inject repository ke usecase
 	UserUseCase := usecase.NewUserUseCase(userRepository)
-	taskUsecase := usecase.NewTaskUsecase(taskRepository)
-	projectUsecase := usecase.NewProjectUseCase(projectRepository)
+	taskUsecase := usecase.NewTaskUsecase(taskRepository, userRepository, projectRepository)
+	projectUsecase := usecase.NewProjectUseCase(projectRepository, userRepository)
 	reportUsecase := usecase.NewReportUsecase(reportRepository, taskRepository)
 
 	jwtService := service.NewJwtService(cfg.TokenConfig)

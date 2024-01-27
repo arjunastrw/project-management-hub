@@ -35,7 +35,7 @@ func (r *reportRepository) CreateReport(payload model.Report) (model.Report, err
 
 	//report to txt
 	reportToTXT := model.ShowReport{Content: report}
-	err = r.report.WriteReport(reportToTXT)
+	err = r.report.WriteReport(reportToTXT, "create")
 	if err != nil {
 		return model.Report{}, err
 	}
@@ -118,7 +118,7 @@ func (r *reportRepository) UpdateReport(payload model.Report) (model.Report, err
 
 	// report to txt
 	reportToTXT := model.ShowReport{Content: report}
-	err = r.report.WriteReport(reportToTXT)
+	err = r.report.WriteReport(reportToTXT, "update")
 	if err != nil {
 		return model.Report{}, err
 	}

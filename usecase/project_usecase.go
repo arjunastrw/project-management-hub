@@ -1,9 +1,7 @@
 package usecase
 
 import (
-	"errors"
 	"fmt"
-	"log"
 
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/repository"
@@ -26,25 +24,22 @@ type ProjectUseCase interface {
 
 type projectUseCase struct {
 	projectRepo repository.ProjectRepository
+	userRepo    repository.UserRepository
 }
 
-func NewProjectUseCase(projectRepo repository.ProjectRepository) ProjectUseCase {
+func NewProjectUseCase(projectRepo repository.ProjectRepository, userRepo repository.UserRepository) ProjectUseCase {
 	return &projectUseCase{
 		projectRepo: projectRepo,
+		userRepo:    userRepo,
 	}
 }
 
 func (uc *projectUseCase) GetAll(page int, size int) ([]model.Project, shared_model.Paging, error) {
-	// validate
-	// if strings.ToLower(user.Role) != "admin" {
 
-	// 	return nil, shared_model.Paging{}, errors.New("Unauthorized access")
-	// }
 	projects, paging, err := uc.projectRepo.GetAll(page, size)
 	if err != nil {
-		errorMessage := fmt.Sprintf("Failed to get projects: %s", err.Error())
-		log.Printf("ERROR: %s", errorMessage)
-		return nil, shared_model.Paging{}, errors.New(errorMessage)
+		errorMessage := fmt.Errorf(" Failed to get projects: %s", err.Error())
+		return nil, shared_model.Paging{}, errorMessage
 	}
 
 	return projects, paging, nil
@@ -54,60 +49,48 @@ func (uc *projectUseCase) GetProjectById(id string) (model.Project, error) {
 
 	project, err := uc.projectRepo.GetById(id)
 	if err != nil {
-		errorMessage := fmt.Sprintf("Failed to get projects: %s", err.Error())
-		log.Printf("ERROR: %s", errorMessage)
-		return model.Project{}, errors.New(errorMessage)
+		errorMessage := fmt.Errorf(" Failed to get projects: %s", err.Error())
+		return model.Project{}, errorMessage
 	}
 
-	// if !uc.isUserTeamMemberOrAdmin(user, project) {
-	// 	return model.Project{}, errors.New("Unauthorized access")
-	// }
 	return project, nil
 }
 
 func (uc *projectUseCase) GetProjectsByDeadline(date string) ([]model.Project, error) {
-	//// validate
-	//if strings.ToLower(user.Role) != "admin" {
-	//	return nil, shared_model.Paging{}, errors.New("Unauthorized access")
-	//}
+
 	projects, err := uc.projectRepo.GetByDeadline(date)
 	if err != nil {
-		errorMessage := fmt.Sprintf("Failed to get projects: %s", err.Error())
-		log.Printf("ERROR: %s", errorMessage)
-		return nil, errors.New(errorMessage)
+		errorMessage := fmt.Errorf(" Failed to get projects: %s", err.Error())
+		return nil, errorMessage
 	}
 
-	successMessage := fmt.Sprintf("Successfully retrieved projects with deadline %s", date)
-	log.Printf("INFO: %s", successMessage)
-
 	if len(projects) == 0 {
-		warningMessage := "No projects found with the given deadline"
-		log.Printf("WARNING: %s", warningMessage)
+		errorMessage := fmt.Errorf(" No projects found with the given deadline")
+		return nil, errorMessage
 	}
 
 	return projects, nil
 }
 
 func (uc *projectUseCase) GetProjectsByManagerId(id string) ([]model.Project, error) {
-	// validate
-	// if strings.ToLower(user.Role) != "admin" {
-
-	// 	return nil, shared_model.Paging{}, errors.New("Unauthorized access")
-	// }
-
+	manager, err := uc.userRepo.GetById(id)
+	if err != nil {
+		errorMessage := fmt.Errorf(" Failed to get projects by ManagerId: invalid id")
+		return nil, errorMessage
+	}
+	if manager.Role == "TEAM MEMBER" {
+		errorMessage := fmt.Errorf(" Failed to get projects by ManagerId: Unauthorized")
+		return nil, errorMessage
+	}
 	projects, err := uc.projectRepo.GetByManagerId(id)
 	if err != nil {
-		errorMessage := fmt.Sprintf("Failed to get projects by ManagerId: %s", err.Error())
-		log.Printf("ERROR: %s", errorMessage)
-		return nil, errors.New(errorMessage)
+		errorMessage := fmt.Errorf(" Failed to get projects by ManagerId: %s", err.Error())
+		return nil, errorMessage
 	}
 
-	successMessage := fmt.Sprintf("Successfully retrieved projects with Manager Id %s", id)
-	log.Printf("INFO: %s", successMessage)
-
 	if len(projects) == 0 {
-		warningMessage := "No projects found with the given Manager Id"
-		log.Printf("WARNING: %s", warningMessage)
+		errorMessage := fmt.Errorf(" No projects found with the given Manager Id")
+		return nil, errorMessage
 	}
 
 	return projects, nil
@@ -116,159 +99,155 @@ func (uc *projectUseCase) GetProjectsByManagerId(id string) ([]model.Project, er
 
 func (uc *projectUseCase) GetProjectsByMemberId(id string) ([]model.Project, error) {
 
-	// if strings.ToLower(user.Role) != "member" {
+	_, err := uc.userRepo.GetById(id)
+	if err != nil {
 
-	// 	return nil, shared_model.Paging{}, errors.New("Unauthorized access")
-	// }
+		errorMessage := fmt.Errorf(" Failed to get projects by MemberId: invalid id")
+		return nil, errorMessage
+	}
 
 	projects, err := uc.projectRepo.GetByMemberId(id)
 	if err != nil {
 
-		errorMessage := fmt.Sprintf("Failed to get projects by MemberId: %s", err.Error())
-		log.Printf("ERROR: %s", errorMessage)
-		return nil, errors.New(errorMessage)
-	}
+		errorMessage := fmt.Errorf(" Failed to get projects by MemberId: no project currently")
 
-	successMessage := fmt.Sprintf("Successfully retrieved projects with Member Id %s", id)
-	log.Printf("INFO: %s", successMessage)
+		return nil, errorMessage
+	}
 
 	return projects, nil
 
 }
 
 func (uc *projectUseCase) CreateNewProject(payload model.Project) (model.Project, error) {
-	// if !uc.isAdminOrProjectManager(user) {
-
-	// 	return nil, errors.New("Unauthorized access")
-	// }
 
 	if payload.Name == "" || payload.ManagerId == "" || payload.Deadline == "" {
-		errorMessage := " Fields 'name', 'manager id', 'deadline' cannot be empty"
-		log.Printf("ERROR: %s", errorMessage)
-		return model.Project{}, errors.New(errorMessage)
+		errorMessage := fmt.Errorf(" Fields 'name', 'manager id', 'deadline' cannot be empty")
+
+		return model.Project{}, errorMessage
 	}
 
 	createdProject, err := uc.projectRepo.CreateProject(payload)
 	if err != nil {
-		errorMessage := fmt.Sprintf("Failed to create project: %s", err.Error())
-		log.Printf("ERROR: %s", errorMessage)
-		return model.Project{}, errors.New(errorMessage)
-	}
+		errorMessage := fmt.Errorf(" Failed to create project: %s", err.Error())
 
-	successMessage := "Successfully created project"
-	log.Printf("INFO: %s", successMessage)
+		return model.Project{}, errorMessage
+	}
 
 	return createdProject, nil
 
 }
 
 func (uc *projectUseCase) AddProjectMember(id string, members []string) error {
-	// if !uc.isAdminOrProjectManager(user) {
-
-	// 	return nil, errors.New("Unauthorized access")
-	// }
-
-	// Call the corresponding method from the repository
-
-	err := uc.projectRepo.AddProjectMember(id, members)
+	memberscheck, err := uc.projectRepo.GetAllProjectMember(id)
 	if err != nil {
-		errorMessage := fmt.Sprintf("Failed to add project members: %s", err.Error())
-		log.Printf("ERROR: %s", errorMessage)
-		return errors.New(errorMessage)
+		errorMessage := fmt.Errorf(" Failed to add project members: %s", err.Error())
+		return errorMessage
 	}
+	for _, membercheck := range memberscheck {
+		for _, member := range members {
+			if membercheck.Id == member {
+				errorMessage := fmt.Errorf(" Failed to add member. Some member(s) already in project")
+				return errorMessage
+			}
+		}
+	}
+	err = uc.projectRepo.AddProjectMember(id, members)
+	if err != nil {
+		errorMessage := fmt.Errorf(" Failed to add project members: %s", err.Error())
 
-	successMessage := "Successfully added project members"
-	log.Printf("INFO: %s", successMessage)
+		return errorMessage
+	}
 
 	return nil
 
 }
 
 func (uc *projectUseCase) DeleteProjectMember(id string, members []string) error {
-	// Add validation logic here if needed
-	// if !uc.isAdminOrProjectManager(user) {
-	//     return errors.New("Unauthorized access")
-	// }
 
-	// Call the corresponding method from the repository
+	for _, member := range members {
+		x, err := uc.userRepo.GetById(member)
+		if err != nil {
+			errorMessage := fmt.Errorf(" Failed to delete project members: %s", err.Error())
+			return errorMessage
+		}
+		for _, task := range x.Task {
+			if task.ProjectId == id {
+				errorMessage := fmt.Errorf(" Failed to delete project members: member with id %s stile have task in project id %s", x.Id, id)
+				return errorMessage
+			}
+		}
+	}
 	err := uc.projectRepo.DeleteProjectMember(id, members)
 	if err != nil {
-		errorMessage := fmt.Sprintf("Failed to delete project members: %s", err.Error())
-		log.Printf("ERROR: %s", errorMessage)
-		return errors.New(errorMessage)
-	}
+		errorMessage := fmt.Errorf(" Failed to delete project members: %s", err.Error())
 
-	successMessage := "Successfully deleted project members"
-	log.Printf("INFO: %s", successMessage)
+		return errorMessage
+	}
 
 	return nil
 }
 
 func (uc *projectUseCase) GetAllProjectMember(id string) ([]model.User, error) {
 
-	// if !uc.isAdminOrProjectManager(user) {
-
-	// 	return nil, errors.New("Unauthorized access")
-	// }
+	_, err := uc.projectRepo.GetById(id)
+	if err != nil {
+		errorMessage := fmt.Errorf(" Failed to get project members: invalid id")
+		return []model.User{}, errorMessage
+	}
 
 	users, err := uc.projectRepo.GetAllProjectMember(id)
 	if err != nil {
-		errorMessage := fmt.Sprintf("Failed to get project members: %s", err.Error())
-		log.Printf("ERROR: %s", errorMessage)
-		return []model.User{}, errors.New(errorMessage)
+		errorMessage := fmt.Errorf(" Failed to get project members: %s", err.Error())
+
+		return []model.User{}, errorMessage
 	}
 	return users, nil
 }
 
 func (uc *projectUseCase) Delete(id string) error {
 
-	// if user.Role != "admin" {
-
-	// 	return nil, errors.New("Unauthorized access")
-	// }
-
 	err := uc.projectRepo.Delete(id)
 	if err != nil {
-		errorMessage := fmt.Sprintf("Failed to delete project: %s", err.Error())
-		log.Printf("ERROR: %s", errorMessage)
-		return errors.New(errorMessage)
-	}
+		errorMessage := fmt.Errorf(" Failed to delete project: %s", err.Error())
 
-	successMessage := "Successfully deleted project"
-	log.Printf("INFO: %s", successMessage)
+		return errorMessage
+	}
 
 	return nil
 }
 
 func (uc *projectUseCase) Update(payload model.Project) (model.Project, error) {
-	// Add validation or logic here if needed
-	// if !uc.isAdminOrProjectManager(user) {
-	//     return model.Project{}, errors.New("Unauthorized access")
-	// }
+
+	_, err := uc.projectRepo.GetById(payload.Id)
+	if err != nil {
+
+		errorMessage := fmt.Errorf(" Failed to update project: invalid id")
+		return model.Project{}, errorMessage
+	}
+	manager, err := uc.userRepo.GetById(payload.ManagerId)
+	if err != nil {
+
+		errorMessage := fmt.Errorf(" Failed to update project: invalid manager id")
+		return model.Project{}, errorMessage
+	}
+	if manager.Role != "MANAGER" {
+
+		errorMessage := fmt.Errorf(" Failed to update project: manager id is not manager")
+		return model.Project{}, errorMessage
+	}
+
+	if payload.Name == "" || payload.Deadline == "" {
+
+		errorMessage := fmt.Errorf(" Fields 'name', 'deadline' cannot be empty")
+		return model.Project{}, errorMessage
+	}
 
 	updatedProject, err := uc.projectRepo.Update(payload)
 	if err != nil {
-		errorMessage := fmt.Sprintf("Failed to update project: %s", err.Error())
-		log.Printf("ERROR: %s", errorMessage)
-		return model.Project{}, errors.New(errorMessage)
-	}
+		errorMessage := fmt.Errorf(" Failed to update project: %s", err.Error())
 
-	successMessage := "Successfully updated project"
-	log.Printf("INFO: %s", successMessage)
+		return model.Project{}, errorMessage
+	}
 
 	return updatedProject, nil
 }
-
-//func (uc *projectUseCase) isUserTeamMemberOrAdmin(user model.User, project model.Project) bool {
-//	//validate
-//	for _, member := range project.Members {
-//		if member.Id == user.Id || user.Role == "ADMIN" {
-//			return true
-//		}
-//	}
-//	return false
-//}
-//
-//func (uc *projectUseCase) isAdminOrProjectManager(user model.User) bool {
-//	return user.Role == "ADMIN" || user.Role == "MANAGER"
-//}

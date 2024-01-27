@@ -38,10 +38,8 @@ func (a *userUseCase) FindAllUser(page int, size int) ([]model.User, shared_mode
 func (a *userUseCase) FindUserById(id string) (model.User, error) {
 	user, err := a.userRepository.GetById(id)
 	if err != nil {
-		log.Println(err)
 		return model.User{}, fmt.Errorf("failed to get user. user id not found")
 	}
-	log.Println(user)
 	return user, nil
 }
 
@@ -49,10 +47,8 @@ func (a *userUseCase) FindUserByEmail(email string) (model.User, error) {
 
 	user, err := a.userRepository.GetByEmail(email)
 	if err != nil {
-		log.Println(err)
 		return model.User{}, fmt.Errorf("failed to get user. user email not found")
 	}
-	log.Println(user)
 	return user, nil
 }
 
@@ -60,26 +56,20 @@ func (a *userUseCase) CreateUser(payload model.User) (model.User, error) {
 
 	if payload.Name == "" || payload.Email == "" || payload.Password == "" {
 
-		log.Println("failed to create user. empty field exist")
 		return model.User{}, fmt.Errorf("failed to create user. empty field exist")
 	}
 	if payload.Role != "ADMIN" && payload.Role != "MANAGER" && payload.Role != "TEAM MEMBER" {
 
-		log.Println("failed to create user. invalid role. role: ('ADMIN', 'MANAGER', 'TEAM MEMBER')")
 		return model.User{}, fmt.Errorf("failed to create user. invalid role. role: ('ADMIN', 'MANAGER', 'TEAM MEMBER')")
 	}
 
 	_, err := a.userRepository.GetById(payload.Id)
 	if err == nil {
-
-		log.Println("failed to create user. user already exist")
 		return model.User{}, fmt.Errorf("failed to create user. user already exist")
 	}
 
 	_, err = a.userRepository.GetByEmail(payload.Email)
 	if err == nil {
-
-		log.Printf("failed to create user. Email %s is already exist", payload.Email)
 		return model.User{}, fmt.Errorf(" Email %s is already exist", payload.Email)
 	}
 
@@ -100,19 +90,15 @@ func (a *userUseCase) UpdateUser(payload model.User) (model.User, error) {
 
 	if payload.Name == "" || payload.Email == "" || payload.Password == "" {
 
-		log.Printf("failed to update user. empty field exist")
 		return model.User{}, fmt.Errorf("failed to update user. empty field exist")
 	}
 	if payload.Role != "ADMIN" && payload.Role != "MANAGER" && payload.Role != "TEAM MEMBER" {
 
-		log.Println("failed to update user. invalid role. role: ('ADMIN', 'MANAGER', 'TEAM MEMBER')")
 		return model.User{}, fmt.Errorf("failed to update user. invalid role. role: ('ADMIN', 'MANAGER', 'TEAM MEMBER')")
 	}
 
 	existingUser, err := a.userRepository.GetByEmail(payload.Email)
 	if err == nil && payload.Id != existingUser.Id {
-
-		log.Printf("failed to update user. Email %s is already exist", payload.Email)
 		return model.User{}, fmt.Errorf("failed to update user. Email %s is already exist", payload.Email)
 	}
 
@@ -132,8 +118,6 @@ func (a *userUseCase) UpdateUser(payload model.User) (model.User, error) {
 func (a *userUseCase) DeleteUser(id string) error {
 
 	if _, err := a.userRepository.GetById(id); err != nil {
-
-		log.Println("failed to Delete User. user id invalid")
 		return fmt.Errorf("failed to delete user. user id invalid")
 	}
 
