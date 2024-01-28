@@ -29,10 +29,15 @@ type TokenConfig struct {
 	JwtExpiresTime   time.Duration
 }
 
+type PathConfig struct {
+	StaticPath string `json:"static_path"`
+}
+
 type Config struct {
 	DbConfig
 	ApiConfig
 	TokenConfig
+	PathConfig
 }
 
 func (c *Config) ConfigConfiguration() error {
@@ -64,6 +69,11 @@ func (c *Config) ConfigConfiguration() error {
 		JwtSignatureKey:  []byte(os.Getenv("JWT_SIGNATURE_KEY")),
 		JwtSigningMethod: jwt.SigningMethodHS256,
 		JwtExpiresTime:   time.Duration(tokenExpire) * time.Hour,
+	}
+
+	c.PathConfig = PathConfig{StaticPath: os.Getenv("FILE_PATH")}
+	if c.PathConfig.StaticPath == "" {
+		return fmt.Errorf("missing requirement FILE_PATH in .env ")
 	}
 
 	return nil

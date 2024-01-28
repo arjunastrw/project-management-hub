@@ -103,7 +103,7 @@ func (h *ReportController) GetReportByUserIdController(c *gin.Context) {
 func (h *ReportController) Route() {
 	h.rg.GET("/get/reporttaskid", h.authMiddleware.RequireToken("ADMIN", "MANAGER"), h.GetReportByTaskIdController)
 	h.rg.GET("/get/reportuserid", h.authMiddleware.RequireToken("ADMIN", "MANAGER"), h.GetReportByUserIdController)
-	h.rg.POST("/createreport", h.authMiddleware.RequireToken("ADMIN", "MANAGER"), h.CreateNewReportController)
+	h.rg.POST("/createreport", h.authMiddleware.RequireToken("TEAM MEMBER"), h.CreateNewReportController)
 	h.rg.PUT("/updatereport", h.authMiddleware.RequireToken("TEAM MEMBER"), h.UpdateReportController)
 	h.rg.DELETE("/deletedreport", h.authMiddleware.RequireToken("ADMIN"), h.DeleteReportByIdController)
 }

@@ -1,14 +1,15 @@
 package controller
 
 import (
+	"fmt"
+	"log"
+	"strconv"
+
 	"enigma.com/projectmanagementhub/delivery/middleware"
 	"enigma.com/projectmanagementhub/model"
 	"enigma.com/projectmanagementhub/shared/common"
 	"enigma.com/projectmanagementhub/usecase"
-	"fmt"
 	"github.com/gin-gonic/gin"
-	"log"
-	"strconv"
 )
 
 type UserController struct {

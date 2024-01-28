@@ -92,7 +92,7 @@ func (t *taskUsecase) UpdateTask(userId string, payload model.Task) (model.Task,
 	}
 
 	user, err := t.userRepository.GetById(userId)
-	if err == nil {
+	if err != nil {
 		return model.Task{}, fmt.Errorf("failed to update task. user id invalid")
 	}
 
@@ -102,7 +102,7 @@ func (t *taskUsecase) UpdateTask(userId string, payload model.Task) (model.Task,
 		}
 
 		_, err := t.userRepository.GetById(payload.PersonInCharge)
-		if err == nil {
+		if err != nil {
 			return model.Task{}, fmt.Errorf("failed to update task. person in charge id invalid")
 		}
 
