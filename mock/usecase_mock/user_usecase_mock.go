@@ -1,4 +1,4 @@
-package usecasemock
+package usecase_mock
 
 import (
 	"enigma.com/projectmanagementhub/model"
