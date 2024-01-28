@@ -7,6 +7,8 @@ import (
 
 	"enigma.com/projectmanagementhub/mock/repository_mock"
 	"enigma.com/projectmanagementhub/model"
+	"enigma.com/projectmanagementhub/shared/shared_model"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,7 +36,7 @@ var expectedUsers = []model.User{
 	{
 		Id:        "2",
 		Name:      "User name 2",
-		Email:     "authoremail2@mail.com",
+		Email:     "userremail2@mail.com",
 		Password:  "password2",
 		Role:      "USER",
 		CreatedAt: time.Now(),
@@ -42,7 +44,27 @@ var expectedUsers = []model.User{
 	},
 }
 
+var expectedPaging = shared_model.Paging{Page: 1, RowsPerPage: 10, TotalPages: 2}
+
+// Test Get All User Success
+func (a *UserUseCaseTest) TestFindAllUser_Success() {
+
+	a.urm.On("GetAll", 1, 10).Return(expectedUsers, expectedPaging, nil)
+	users, paging, err := a.uc.FindAllUser(1, 10)
+
+	assert.NoError(a.T(), err)
+	assert.Equal(a.T(), expectedUsers, users)
+	assert.Equal(a.T(), expectedPaging, paging)
+	a.urm.AssertExpectations(a.T())
+}
+
 // Test Get All User Failed
+func (a *UserUseCaseTest) TestFindAllUser_Failed() {
+
+	a.urm.On("GetAll", 1, 10).Return([]model.User{}, shared_model.Paging{}, fmt.Errorf("failed to get users"))
+	_, _, err := a.uc.FindAllUser(1, 10)
+	a.Error(err)
+}
 
 // Test Get User By ID Success
 func (a *UserUseCaseTest) TestFindUserById_Success() {
@@ -64,13 +86,13 @@ func (a *UserUseCaseTest) TestFindUserById_Failed() {
 // Test Get User By Email Success
 func (a *UserUseCaseTest) TestFindUserByEmail_Success() {
 
-	a.urm.On("GetByEmail", expectedUsers[0].Email).Return(expectedUsers[1], nil)
-	actual, err := a.uc.FindUserByEmail(expectedUsers[0].Email)
+	a.urm.On("GetByEmail", expectedUsers[1].Email).Return(expectedUsers[1], nil)
+	actual, err := a.uc.FindUserByEmail(expectedUsers[1].Email)
 	a.NoError(err)
 	a.Equal(expectedUsers[1], actual)
 }
 
-// Test Get User By Email Failed
+// Test Get User By Email Not Found
 func (a *UserUseCaseTest) TestFindUserByEmail_Failed() {
 
 	a.urm.On("GetByEmail", expectedUsers[0].Email).Return(model.User{}, fmt.Errorf("user email not found"))
@@ -78,7 +100,26 @@ func (a *UserUseCaseTest) TestFindUserByEmail_Failed() {
 	a.Error(err)
 }
 
-// Test Create User Success
+// Test Create user Success
+
+// Test Delete User Success
+func (a *UserUseCaseTest) TestDeleteUser_Success() {
+
+	a.urm.On("GetById", "1").Return(expectedUsers[0], nil)
+	a.urm.On("Delete", "1").Return(nil)
+	actual := a.uc.DeleteUser("1")
+	a.NoError(actual)
+	a.urm.AssertExpectations(a.T())
+}
+
+// Test Delete User Failed
+func (a *UserUseCaseTest) TestDeleteUser_Failed() {
+	a.urm.On("GetById", "1").Return(model.User{}, fmt.Errorf("user id not found"))
+	a.urm.On("Delete", "1").Return(fmt.Errorf("failed to delete user"))
+	err := a.uc.DeleteUser("1")
+	a.Error(err)
+
+}
 
 func TestUserUsecase(t *testing.T) {
 
