@@ -125,9 +125,9 @@ func (r *reportRepository) UpdateReport(payload model.Report) (model.Report, err
 	return report, nil
 }
 
-func NewReportRepository(db *sql.DB) ReportRepository {
+func NewReportRepository(db *sql.DB, report report.ReportToTXT) ReportRepository {
 	return &reportRepository{
 		db:     db,
-		report: &report.AreportToTXT{},
+		report: report,
 	}
 }

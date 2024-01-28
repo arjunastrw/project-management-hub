@@ -7,6 +7,7 @@ import (
 	"enigma.com/projectmanagementhub/config"
 	"enigma.com/projectmanagementhub/delivery/controller"
 	"enigma.com/projectmanagementhub/delivery/middleware"
+	"enigma.com/projectmanagementhub/report"
 	"enigma.com/projectmanagementhub/shared/service"
 
 	"enigma.com/projectmanagementhub/repository"
@@ -57,11 +58,13 @@ func NewServer() *Server {
 		panic(err)
 	}
 
+	report := report.NewReportToTXT(cfg.PathConfig)
+
 	//inject db ke repository
 	taskRepository := repository.NewTaskRepository(db)
 	userRepository := repository.NewUserRepository(db)
 	projectRepository := repository.NewProjectRepository(db)
-	reportRepository := repository.NewReportRepository(db)
+	reportRepository := repository.NewReportRepository(db, report)
 
 	//inject repository ke usecase
 	UserUseCase := usecase.NewUserUseCase(userRepository)
