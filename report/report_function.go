@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"enigma.com/projectmanagementhub/config"
 	"enigma.com/projectmanagementhub/model"
 )
 
@@ -16,12 +17,18 @@ type ReportToTXT interface {
 	WriteReport(report model.ShowReport, status string) error
 }
 
-type AreportToTXT struct{}
+type reportToTXT struct {
+	cfg config.PathConfig
+}
+
+func NewReportToTXT(cfg config.PathConfig) ReportToTXT {
+	return &reportToTXT{cfg: cfg}
+}
 
 // WriteReport menulis laporan ke file teks.
-func (r *AreportToTXT) WriteReport(report model.ShowReport, status string) error {
+func (r *reportToTXT) WriteReport(report model.ShowReport, status string) error {
 	// Membuat nama file dengan format "YYYY-MM-DD.txt" di dalam folder
-	folderPath := "D:/final_project_enigma2/project-management-hub/report/report-result"
+	folderPath := r.cfg.StaticPath //"D:/final_project_enigma2/project-management-hub/report/report-result"
 	fileName := filepath.Join(folderPath, time.Now().Format("2006-01-02")+".txt")
 
 	// Membuat folder jika belum ada
