@@ -1,0 +1,38 @@
+version: "3.8"
+services:
+  database:
+    image: postgres:alpine
+    restart: unless-stopped
+    container_name: container_db
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_HOST=${DB_HOST}
+    ports:
+      - "5432"
+    volumes:
+      # copy sql script to create database
+      - ./sql/DDL.sql:/docker-entrypoint-initdb.d/DDL.sql
+      - ./codenebula:/var/lib/postgresql/data
+    networks:
+      - pmh-net
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - database
+    env_file:
+      - .env
+    networks:
+      - pmh-net
+    ports:
+      - "8081:8081"
+volumes:
+  codenebula:
+
+networks:
+  pmh-net:
+    driver: bridge

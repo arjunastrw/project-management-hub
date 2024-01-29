@@ -1,4 +1,4 @@
-CREATE DATABASE IF NOT EXISTS project_management_db;
+CREATE DATABASE project_management_db;
 
 CREATE EXTENSION "uuid-ossp";
 
