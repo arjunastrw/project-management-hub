@@ -240,6 +240,213 @@ func (s *ProjectUsecaseTest) TestUpdateProjectfail() {
 	s.urm.AssertExpectations(s.T())
 }
 
+// Test create new project failure with invalid deadline
+func (s *ProjectUsecaseTest) TestCreateNewProjectFailWithInvalidDeadline() {
+	// Payload with an invalid deadline
+	payload := model.Project{
+		Name:      "Project One",
+		ManagerId: "managerID",
+		Deadline:  "", // Invalid format
+	}
+
+	// Call the use case method
+	_, err := s.auc.CreateNewProject(payload)
+
+	// Assertions
+	assert.Error(s.T(), err)
+	assert.Contains(s.T(), err.Error(), "")
+
+	// Verify that expected methods were not called
+
+	s.urm.AssertExpectations(s.T())
+}
+
+// Test update project failure with non-existing project
+func (s *ProjectUsecaseTest) TestUpdateProjectFailWithNonExistingProject() {
+	// Mocking dependencies
+	s.arm.On("GetById", projectTest.Id).Return(model.Project{}, fmt.Errorf("Project not found"))
+
+	// Call the use case method
+	_, err := s.auc.Update(projectTest)
+
+	// Assertions
+	assert.Error(s.T(), err)
+	assert.Contains(s.T(), err.Error(), "invalid id")
+
+	// Verify that expected methods were called
+	s.arm.AssertExpectations(s.T())
+	s.urm.AssertExpectations(s.T())
+}
+
+// Test update project failure with invalid manager ID
+func (s *ProjectUsecaseTest) TestUpdateProjectFailWithInvalidManagerID() {
+	// Mocking dependencies
+	s.arm.On("GetById", projectTest.Id).Return(projectTest, nil)
+	s.urm.On("GetById", projectTest.ManagerId).Return(model.User{Role: "NOT_MANAGER"}, nil)
+
+	// Call the use case method
+	_, err := s.auc.Update(projectTest)
+
+	// Assertions
+	assert.Error(s.T(), err)
+	assert.Contains(s.T(), err.Error(), "manager id is not manager")
+
+	// Verify that expected methods were called
+	s.arm.AssertExpectations(s.T())
+	s.urm.AssertExpectations(s.T())
+}
+
+// Test update project failure with repository error
+func (s *ProjectUsecaseTest) TestUpdateProjectFailWithRepositoryError() {
+	// Mocking dependencies
+	s.arm.On("GetById", projectTest.Id).Return(projectTest, nil)
+	s.urm.On("GetById", projectTest.ManagerId).Return(model.User{Role: "MANAGER"}, nil)
+	s.arm.On("Update", mock.AnythingOfType("model.Project")).Return(model.Project{}, fmt.Errorf("Repository error"))
+
+	// Call the use case method
+	_, err := s.auc.Update(projectTest)
+
+	// Assertions
+	assert.Error(s.T(), err)
+	assert.Contains(s.T(), err.Error(), "Failed to update project")
+
+	// Verify that expected methods were called
+	s.arm.AssertExpectations(s.T())
+	s.urm.AssertExpectations(s.T())
+}
+
+// Test delete project failure with non-existing project
+func (s *ProjectUsecaseTest) TestDeleteProjectFailWithNonExistingProject() {
+	// Mocking dependencies
+	s.arm.On("Delete", projectTest.Id).Return(fmt.Errorf("Project not found"))
+
+	// Call the use case method
+	err := s.auc.Delete(projectTest.Id)
+
+	// Assertions
+	assert.Error(s.T(), err)
+	assert.Contains(s.T(), err.Error(), "Project not found")
+
+	// Verify that expected methods were called
+	s.arm.AssertExpectations(s.T())
+}
+
+// Test delete project failure with repository error
+func (s *ProjectUsecaseTest) TestDeleteProjectFailWithRepositoryError() {
+	// Mocking dependencies
+	s.arm.On("Delete", projectTest.Id).Return(fmt.Errorf("Repository error"))
+
+	// Call the use case method
+	err := s.auc.Delete(projectTest.Id)
+
+	// Assertions
+	assert.Error(s.T(), err)
+	assert.Contains(s.T(), err.Error(), "Failed to delete project")
+
+	// Verify that expected methods were called
+	s.arm.AssertExpectations(s.T())
+}
+
+// Test get project by manager id failure with non-existing manager
+func (s *ProjectUsecaseTest) TestGetProjectsByManagerIdFailWithNonExistingManager() {
+	// Mocking dependencies
+	s.urm.On("GetById", projectTest.ManagerId).Return(model.User{}, fmt.Errorf("Manager not found"))
+
+	// Call the use case method
+	_, err := s.auc.GetProjectsByManagerId(projectTest.ManagerId)
+
+	// Assertions
+	assert.Error(s.T(), err)
+	assert.Contains(s.T(), err.Error(), "invalid id")
+
+	// Verify that expected methods were called
+	s.urm.AssertExpectations(s.T())
+	s.arm.AssertExpectations(s.T())
+}
+
+// Test add project member failure with non-existing project
+func (s *ProjectUsecaseTest) TestAddProjectMemberFailWithNonExistingProject() {
+	// Mocking dependencies
+	s.arm.On("GetAllProjectMember", "").Return([]model.User{}, fmt.Errorf(""))
+
+	// Call the use case method
+	err := s.auc.AddProjectMember("", []string{"user"})
+
+	// Assertions
+	assert.Error(s.T(), err)
+	assert.Contains(s.T(), err.Error(), "Failed to add project members")
+
+	// Verify that expected methods were called
+	s.arm.AssertExpectations(s.T())
+
+}
+
+// Test add project member failure with repository error
+func (s *ProjectUsecaseTest) TestAddProjectMemberFailWithRepositoryError() {
+	// Mocking dependencies
+	s.arm.On("GetAllProjectMember", projectTest.Id).Return([]model.User{}, nil)
+	s.arm.On("AddProjectMember", projectTest.Id, mock.AnythingOfType("[]string")).Return(fmt.Errorf("Repository error"))
+
+	// Call the use case method
+	err := s.auc.AddProjectMember(projectTest.Id, []string{"member1"})
+
+	// Assertions
+	assert.Error(s.T(), err)
+	assert.Contains(s.T(), err.Error(), "Failed to add project member")
+
+	// Verify that expected methods were called
+	s.arm.AssertExpectations(s.T())
+}
+
+// Test get all project members failure with non-existing project
+func (s *ProjectUsecaseTest) TestGetAllProjectMemberFailWithNonExistingProject() {
+	// Mocking dependencies
+	s.arm.On("GetById", projectTest.Id).Return(model.Project{}, fmt.Errorf("Project not found"))
+
+	// Call the use case method
+	_, err := s.auc.GetAllProjectMember(projectTest.Id)
+
+	// Assertions
+	assert.Error(s.T(), err)
+	assert.Contains(s.T(), err.Error(), "invalid id")
+
+	// Verify that expected methods were called
+	s.arm.AssertExpectations(s.T())
+}
+
+// Test get all project members failure with repository error
+func (s *ProjectUsecaseTest) TestGetAllProjectMemberFailWithRepositoryError() {
+	// Mocking dependencies
+	s.arm.On("GetById", projectTest.Id).Return(projectTest, nil)
+	s.arm.On("GetAllProjectMember", projectTest.Id).Return([]model.User{}, fmt.Errorf("Repository error"))
+
+	// Call the use case method
+	_, err := s.auc.GetAllProjectMember(projectTest.Id)
+
+	// Assertions
+	assert.Error(s.T(), err)
+	assert.Contains(s.T(), err.Error(), "Failed to get project members")
+
+	// Verify that expected methods were called
+	s.arm.AssertExpectations(s.T())
+}
+
+// Test get projects by deadline failure with repository error
+func (s *ProjectUsecaseTest) TestGetProjectsByDeadlineFailWithRepositoryError() {
+	// Mocking dependencies
+	s.arm.On("GetByDeadline", projectTest.Deadline).Return([]model.Project{}, fmt.Errorf("Repository error"))
+
+	// Call the use case method
+	_, err := s.auc.GetProjectsByDeadline(projectTest.Deadline)
+
+	// Assertions
+	assert.Error(s.T(), err)
+	assert.Contains(s.T(), err.Error(), "Repository error")
+
+	// Verify that expected methods were called
+	s.arm.AssertExpectations(s.T())
+}
+
 func TestProjectUsecase(t *testing.T) {
 	suite.Run(t, new(ProjectUsecaseTest))
 }
