@@ -11,6 +11,6 @@ COPY . .
 
 RUN go build -o project-management-hub
 
-EXPOSE 8080
+EXPOSE 8081
 
 ENTRYPOINT [ "./project-management-hub" ]
