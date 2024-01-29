@@ -13,6 +13,7 @@ import (
 	"enigma.com/projectmanagementhub/mock/middleware_mock"
 	"enigma.com/projectmanagementhub/mock/usecase_mock"
 	"enigma.com/projectmanagementhub/model"
+	"enigma.com/projectmanagementhub/shared/shared_model"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/suite"
 )
@@ -43,6 +44,86 @@ func (a *userControllerTestSuite) SetupTest() {
 	rg := r.Group("/pmh-api/v1")
 	rg.Use(a.authMiddleware.RequireToken("ADMIN", "TIM MEMBER", "MANAGER"))
 	a.rg = rg
+}
+
+// Test Get All User Success
+func (a *userControllerTestSuite) TestGetAllUserController_Success() {
+
+	var expectedUsers = []model.User{
+		{
+			Id:        "66213143-eeb9-427d-bc4c-c9aef4ef5528",
+			Name:      "Admin1",
+			Email:     "admin1@enigma",
+			Password:  "admin1",
+			Role:      "ADMIN",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Time{},
+			DeletedAt: nil,
+		},
+		{
+			Id:        "55551234-eeb9-427d-bc4c-c9aef4ef5528",
+			Name:      "Admin2",
+			Email:     "admin2@enigma",
+			Password:  "admin2",
+			Role:      "ADMIN",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Time{},
+			DeletedAt: nil,
+		},
+		{
+			Id:        "44441234-eeb9-427d-bc4c-c9aef4ef5528",
+			Name:      "Admin3",
+			Email:     "admin3@enigma",
+			Password:  "admin3",
+			Role:      "ADMIN",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Time{},
+			DeletedAt: nil,
+		},
+		{
+			Id:        "33331234-eeb9-427d-bc4c-c9aef4ef5528",
+			Name:      "member",
+			Email:     "member3@enigma",
+			Password:  "member3",
+			Role:      "MEMBER",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Time{},
+			DeletedAt: nil,
+		},
+	}
+
+	a.UserUc.On("FindAllUser", 1, 10).Return(expectedUsers, shared_model.Paging{}, nil)
+	userController := NewUserController(a.rg, a.authMiddleware, a.UserUc)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/pmh-api/v1/user/list?page=1&size=10", nil)
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = req
+	ctx.Set("ADMIN", true)
+	userController.FindAllUser(ctx)
+
+	a.Equal(200, w.Code)
+	a.Contains(w.Body.String(), "Admin1")
+	a.Contains(w.Body.String(), "Admin2")
+	a.UserUc.AssertExpectations(a.T())
+}
+
+// Test Get All User Failed
+func (a *userControllerTestSuite) TestGetAllUserController_Failed() {
+
+	userController := NewUserController(a.rg, a.authMiddleware, a.UserUc)
+	a.UserUc.On("FindAllUser", 1, 10).Return([]model.User{ExpectedUser}, shared_model.Paging{}, fmt.Errorf("Failed to get users"))
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/pmh-api/v1/user/list?page=1&size=10", nil)
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = req
+	ctx.Set("ADMIN", true)
+	userController.FindAllUser(ctx)
+
+	a.Equal(400, w.Code)
+	a.Contains(w.Body.String(), "Failed to get users")
+	a.UserUc.AssertExpectations(a.T())
+
 }
 
 // Test Create User Controller Success
@@ -156,7 +237,7 @@ func (a *userControllerTestSuite) TestGetUserByIdController_Failed() {
 	a.NotEqual(401, record.Code)
 }
 
-// Test User Get By Id as Role Admin User Not Found
+// Test User Get By Email Success
 func (a *userControllerTestSuite) TestGetUserByEmailController_Success() {
 
 	a.UserUc.On("FindUserByEmail", "").Return(ExpectedUser, nil)
@@ -174,6 +255,7 @@ func (a *userControllerTestSuite) TestGetUserByEmailController_Success() {
 	a.Equal(200, record.Code)
 }
 
+// Test Get By Email Failed
 func (a *userControllerTestSuite) TestGetUserByEmailController_Failed() {
 	errorMessage := "get user by id failed"
 	a.UserUc.On("FindUserByEmail", "").Return(model.User{}, errors.New(errorMessage))
@@ -192,8 +274,6 @@ func (a *userControllerTestSuite) TestGetUserByEmailController_Failed() {
 }
 
 // Test Delete User Success
-
-// Test Delete User Failed
 
 // Test Delete User Failed
 
