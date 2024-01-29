@@ -37,7 +37,7 @@ func (t *ReportControllerTestSuite) SetupTest() {
 	t.authMiddleware = new(middleware_mock.AuthMiddlewareMock)
 	r := gin.Default()
 	rg := r.Group("/pmh-api/v1")
-	rg.Use(t.authMiddleware.RequireToken("ADMIN", "TIM MEMBER", "MANAGER"))
+	rg.Use(t.authMiddleware.RequireToken("ADMIN", "TEAM MEMBER", "MANAGER"))
 	t.rg = rg
 }
 
@@ -52,7 +52,7 @@ func (t *ReportControllerTestSuite) TestCreateNewReportController() {
 	record := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(record)
 	ctx.Request = request
-	ctx.Set("TIM MEMBER", true)
+	ctx.Set("TEAM MEMBER", true)
 	reportController.CreateNewReportController(ctx)
 	t.Equal(http.StatusOK, record.Code)
 }
@@ -68,7 +68,7 @@ func (t *ReportControllerTestSuite) TestCreateNewReportController_Failed() {
 	record := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(record)
 	ctx.Request = request
-	ctx.Set("TIM MEMBER", false) //i change this akses to tim member
+	ctx.Set("TEAM MEMBER", false) //i change this akses to TEAM MEMBER
 	reportController.CreateNewReportController(ctx)
 	t.NotEqual(http.StatusUnauthorized, record.Code)
 }
@@ -84,7 +84,7 @@ func (t *ReportControllerTestSuite) TestUpdateReportController() {
 	record := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(record)
 	ctx.Request = request
-	ctx.Set("TIM MEMBER", true)
+	ctx.Set("TEAM MEMBER", true)
 	reportController.UpdateReportController(ctx)
 	t.Equal(http.StatusOK, record.Code)
 }
@@ -131,7 +131,7 @@ func (t *ReportControllerTestSuite) TestGetReportByTaskIdController_failed() {
 	record := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(record)
 	ctx.Request = request
-	ctx.Set("TIM MEMBER", false) // i change this akses to tim member
+	ctx.Set("TEAM MEMBER", false) // i change this akses to TEAM MEMBER
 	reportController.GetReportByTaskIdController(ctx)
 	fmt.Println("Response Code:", record.Code)
 	t.NotEqual(http.StatusUnauthorized, record.Code)
@@ -162,7 +162,7 @@ func (t *ReportControllerTestSuite) TestGetReportByUserIdController_failed() {
 	record := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(record)
 	ctx.Request = request
-	ctx.Set("TIM MEMBER", false) // i change this akses to tim member
+	ctx.Set("TEAM MEMBER", false) // i change this akses to TEAM MEMBER
 	reportController.GetReportByUserIdController(ctx)
 	t.NotEqual(http.StatusUnauthorized, record.Code)
 }
@@ -192,7 +192,7 @@ func (t *ReportControllerTestSuite) TestDeleteReportByIdController_failed() {
 	record := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(record)
 	ctx.Request = request
-	ctx.Set("TIM MEMBER", false) // i change this akses to tim member
+	ctx.Set("TEAM MEMBER", false) // i change this akses to TEAM MEMBER
 	reportController.DeleteReportByIdController(ctx)
 	t.NotEqual(http.StatusUnauthorized, record.Code)
 }

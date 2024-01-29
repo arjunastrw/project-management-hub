@@ -485,3 +485,144 @@ func (t *TaskUsecaseTest) TestDeleteTask_Failure() {
 
 	t.trm.AssertExpectations(t.T())
 }
+
+func (t *TaskUsecaseTest) TestUpdateTaskByManager_TaskNotFound() {
+	managerID := "1"
+	taskPayload := model.Task{
+		Id:             "3",
+		Name:           "Updated Task",
+		Status:         "In Progress",
+		Approval:       false,
+		ApprovalDate:   nil,
+		Feedback:       "Updated Feedback",
+		PersonInCharge: "1",
+		ProjectId:      "1",
+		Deadline:       "2024-07-07",
+	}
+
+	manager := model.User{
+		Id:   managerID,
+		Role: "MANAGER",
+	}
+
+	t.urm.On("GetById", managerID).Return(manager, nil)
+	t.trm.On("UpdateTaskByManager", taskPayload).Return(model.Task{}, fmt.Errorf("task not found"))
+
+	_, err := t.tc.UpdateTask(managerID, taskPayload)
+
+	assert.Error(t.T(), err)
+	assert.EqualError(t.T(), err, "task not found")
+
+	t.urm.AssertExpectations(t.T())
+	t.trm.AssertExpectations(t.T())
+}
+
+func (t *TaskUsecaseTest) TestUpdateTaskByTeamMember_NotPIC() {
+	taskPayload := model.Task{
+		Id:             "3",
+		Name:           "Updated Task",
+		Status:         "In Progress",
+		Approval:       false,
+		ApprovalDate:   nil,
+		Feedback:       "Updated Feedback",
+		PersonInCharge: "2",
+		ProjectId:      "1",
+		Deadline:       "2024-07-07",
+	}
+	user := model.User{
+		Id:   "2",
+		Role: "TEAM MEMBER",
+	}
+
+	t.urm.On("GetById", user.Id).Return(user, nil)
+	t.trm.On("GetById", taskPayload.Id).Return(model.Task{}, fmt.Errorf("not pic"))
+
+	_, err := t.tc.UpdateTask(user.Id, taskPayload)
+
+	assert.Error(t.T(), err)
+	assert.EqualError(t.T(), err, "only person in charge and project manager can update task")
+
+	t.urm.AssertExpectations(t.T())
+	t.trm.AssertExpectations(t.T())
+}
+
+func (t *TaskUsecaseTest) TestUpdateTaskByManager_InvalidManager() {
+	managerID := "1"
+	taskPayload := model.Task{
+		Id:             "3",
+		Name:           "Updated Task",
+		Status:         "In Progress",
+		Approval:       false,
+		ApprovalDate:   nil,
+		Feedback:       "Updated Feedback",
+		PersonInCharge: "2",
+		ProjectId:      "1",
+		Deadline:       "2024-07-07",
+	}
+
+	t.urm.On("GetById", managerID).Return(model.User{}, fmt.Errorf("failed to get user by ID"))
+
+	_, err := t.tc.UpdateTask(managerID, taskPayload)
+
+	assert.Error(t.T(), err)
+	assert.EqualError(t.T(), err, "failed to update task. user id invalid")
+
+	t.urm.AssertExpectations(t.T())
+}
+
+func (t *TaskUsecaseTest) TestUpdateTaskByManager_InvalidPersonInCharge() {
+	managerID := "1"
+	taskPayload := model.Task{
+		Id:             "3",
+		Name:           "Updated Task",
+		Status:         "In Progress",
+		Approval:       false,
+		ApprovalDate:   nil,
+		Feedback:       "Updated Feedback",
+		PersonInCharge: "2",
+		ProjectId:      "1",
+		Deadline:       "2024-07-07",
+	}
+
+	manager := model.User{
+		Id:   managerID,
+		Role: "MANAGER",
+	}
+
+	t.urm.On("GetById", managerID).Return(manager, nil)
+	t.urm.On("GetById", taskPayload.PersonInCharge).Return(model.User{}, fmt.Errorf("failed to get user by ID"))
+
+	_, err := t.tc.UpdateTask(managerID, taskPayload)
+
+	assert.Error(t.T(), err)
+	assert.EqualError(t.T(), err, "failed to update task. person in charge id invalid")
+
+	t.urm.AssertExpectations(t.T())
+}
+
+func (t *TaskUsecaseTest) TestUpdateTaskByTeamMember_InvalidUser() {
+	taskPayload := model.Task{
+		Id:             "3",
+		Name:           "Updated Task",
+		Status:         "In Progress",
+		Approval:       false,
+		ApprovalDate:   nil,
+		Feedback:       "Updated Feedback",
+		PersonInCharge: "2",
+		ProjectId:      "1",
+		Deadline:       "2024-07-07",
+	}
+	user := model.User{
+		Id:   "2",
+		Role: "TEAM MEMBER",
+	}
+
+	t.urm.On("GetById", user.Id).Return(model.User{}, fmt.Errorf("failed to get user by ID"))
+
+	_, err := t.tc.UpdateTask(user.Id, taskPayload)
+
+	assert.Error(t.T(), err)
+	assert.EqualError(t.T(), err, "failed to update task. user id invalid")
+
+	t.urm.AssertExpectations(t.T())
+}
