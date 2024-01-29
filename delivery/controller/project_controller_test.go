@@ -1,9 +1,10 @@
 package controller
 
 import (
+	"bytes"
+	"errors"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -30,8 +31,16 @@ var ExpectedProject = model.Project{
 	CreatedAt: time.Now(),
 	UpdatedAt: time.Time{},
 	DeletedAt: nil,
-	Members:   nil,
-	Tasks:     nil,
+	Members:   []model.User{},
+	Tasks:     []model.Task{},
+}
+
+var ExpectedUserMember = model.User{
+	Id:       "95a85ac6-a999-4039-ba4f-832ca6f6ed48",
+	Name:     "member",
+	Email:    "member@mail",
+	Password: "",
+	Role:     "TEAM MEMBER",
 }
 
 func (a *ProjectControllerTestSuite) SetupTest() {
@@ -46,20 +55,199 @@ func (a *ProjectControllerTestSuite) SetupTest() {
 
 // Test Get All Project Success
 func (a *ProjectControllerTestSuite) TestGetAllProjectController_Success() {
-	a.ProjectUc.On("GetAll").Return([]model.Project{ExpectedProject}, shared_model.Paging{}, nil)
+	a.ProjectUc.On("GetAll", 1, 10).Return([]model.Project{ExpectedProject}, shared_model.Paging{}, nil)
 	projectController := NewProjectController(a.ProjectUc, a.authMiddleware, a.rg)
-	projectController.Route()
-	requestBody := `{"name":"Project Web","manager_id":"95a85ac6-a999-4039-ba4f-832ca6f6ed48","deadline":"2024-02-05"}`
-	request, err := http.NewRequest("GET", "/pmh-api/v1/project?page=1&size=10", strings.NewReader(requestBody))
-	a.Nil(err)
 
-	record := httptest.NewRecorder()
-	ctx, _ := gin.CreateTestContext(record)
-	ctx.Request = request
+	// Act
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/project/list?page=1&size=10", nil)
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = req
 	ctx.Set("ADMIN", true)
 	projectController.GetAll(ctx)
-	a.Equal(200, record.Code)
+
+	// Assert
+	a.Equal(200, w.Code)
+	a.ProjectUc.AssertExpectations(a.T())
 }
+
+// Test Get All Project Failed
+func (a *ProjectControllerTestSuite) TestGetAllProjectController_Failed() {
+	expectedError := errors.New("error occurred while getting projects")
+	a.ProjectUc.On("GetAll", 1, 10).Return([]model.Project{}, shared_model.Paging{}, expectedError)
+	projectController := NewProjectController(a.ProjectUc, a.authMiddleware, a.rg)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/project/list?page=1&size=10", nil)
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = req
+	ctx.Set("ADMIN", true)
+	projectController.GetAll(ctx)
+	a.Equal(500, w.Code)
+	a.ProjectUc.AssertExpectations(a.T())
+}
+
+// Test Project Get By Id Success
+func (a *ProjectControllerTestSuite) TestGetProjectByIdController_Success() {
+
+	a.ProjectUc.On("GetProjectById", "").Return(ExpectedProject, nil)
+	projectController := NewProjectController(a.ProjectUc, a.authMiddleware, a.rg)
+	projectController.Route()
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/project/:id?id=65fb33dc-a9f8-4a7c-9f07-ab2210b0d535", nil)
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = req
+	ctx.Set("ADMIN", true)
+	projectController.GetProjectById(ctx)
+	a.Equal(200, w.Code)
+	a.ProjectUc.AssertExpectations(a.T())
+
+}
+
+// Test Get By Id Failed
+func (a *ProjectControllerTestSuite) TestGetProjectByIdController_Failed() {
+
+	a.ProjectUc.On("GetProjectById", "").Return(model.Project{}, errors.New("error"))
+	projectController := NewProjectController(a.ProjectUc, a.authMiddleware, a.rg)
+	projectController.Route()
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/project/:id?id=65fb33dc-a9f8-4a7c-9f07-ab2210b0d535", nil)
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = req
+	ctx.Set("ADMIN", true)
+	projectController.GetProjectById(ctx)
+	a.Equal(400, w.Code)
+	a.ProjectUc.AssertExpectations(a.T())
+}
+
+// Test Get Project By Deadline
+func (a *ProjectControllerTestSuite) TestGetProjectByDeadlineController_Success() {
+
+	a.ProjectUc.On("GetProjectsByDeadline", "").Return([]model.Project{ExpectedProject}, nil)
+	projectController := NewProjectController(a.ProjectUc, a.authMiddleware, a.rg)
+	projectController.Route()
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/project/deadline/:deadline?deadline=2024-02-05", nil)
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = req
+	ctx.Set("ADMIN", true)
+	projectController.GetProjectsByDeadline(ctx)
+	a.Equal(200, w.Code)
+	a.ProjectUc.AssertExpectations(a.T())
+}
+
+// Test Get Project By Deadline Failed
+func (a *ProjectControllerTestSuite) TestGetProjectByDeadlineController_Failed() {
+
+	a.ProjectUc.On("GetProjectsByDeadline", "").Return([]model.Project{}, errors.New("error"))
+	projectController := NewProjectController(a.ProjectUc, a.authMiddleware, a.rg)
+	projectController.Route()
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/project/deadline/:deadline?deadline=2024-02-05", nil)
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = req
+	ctx.Set("ADMIN", true)
+	projectController.GetProjectsByDeadline(ctx)
+	a.Equal(500, w.Code)
+	a.ProjectUc.AssertExpectations(a.T())
+}
+
+// Test Get Project By Id Manager Success
+func (a *ProjectControllerTestSuite) TestGetProjectByManagerIdController_Success() {
+
+	a.ProjectUc.On("GetProjectsByManagerId", "").Return([]model.Project{ExpectedProject}, nil)
+	projectController := NewProjectController(a.ProjectUc, a.authMiddleware, a.rg)
+	projectController.Route()
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/project/manager/:id?id=65fb33dc-a9f8-4a7c-9f07-ab2210b0d535", nil)
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = req
+	ctx.Set("ADMIN", true)
+	projectController.GetProjectsByManagerId(ctx)
+	a.Equal(200, w.Code)
+	a.ProjectUc.AssertExpectations(a.T())
+}
+
+// Test Get Project By Id Manager Failed
+func (a *ProjectControllerTestSuite) TestGetProjectByManagerIdController_Failed() {
+
+	a.ProjectUc.On("GetProjectsByManagerId", "").Return([]model.Project{}, errors.New("error"))
+	projectController := NewProjectController(a.ProjectUc, a.authMiddleware, a.rg)
+	projectController.Route()
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/project/manager/:id?id=65fb33dc-a9f8-4a7c-9f07-ab2210b0d535", nil)
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = req
+	ctx.Set("ADMIN", true)
+	projectController.GetProjectsByManagerId(ctx)
+	a.Equal(500, w.Code)
+	a.ProjectUc.AssertExpectations(a.T())
+}
+
+// Test Get Project By Member Id Success
+func (a *ProjectControllerTestSuite) TestGetProjectByMemberIdController_Success() {
+
+	a.ProjectUc.On("GetProjectsByMemberId", "").Return([]model.Project{ExpectedProject}, nil)
+	projectController := NewProjectController(a.ProjectUc, a.authMiddleware, a.rg)
+	projectController.Route()
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/project/member/:id?id=65fb33dc-a9f8-4a7c-9f07-ab2210b0d535", nil)
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = req
+	ctx.Set("ADMIN", true)
+	projectController.GetProjectsByMemberId(ctx)
+	a.Equal(200, w.Code)
+	a.ProjectUc.AssertExpectations(a.T())
+}
+
+// Test Get Project By Member Id Failed
+func (a *ProjectControllerTestSuite) TestGetProjectByMemberIdController_Failed() {
+
+	a.ProjectUc.On("GetProjectsByMemberId", "").Return([]model.Project{}, errors.New("error"))
+	projectController := NewProjectController(a.ProjectUc, a.authMiddleware, a.rg)
+	projectController.Route()
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/project/member/:id?id=65fb33dc-a9f8-4a7c-9f07-ab2210b0d535", nil)
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = req
+	ctx.Set("ADMIN", true)
+	projectController.GetProjectsByMemberId(ctx)
+	a.Equal(500, w.Code)
+	a.ProjectUc.AssertExpectations(a.T())
+}
+
+// Test Create Project Success
+func (a *ProjectControllerTestSuite) TestCreateProjectController_Success() {
+
+	a.ProjectUc.On("CreateNewProject", model.Project{}).Return(ExpectedProject, nil)
+	projectController := NewProjectController(a.ProjectUc, a.authMiddleware, a.rg)
+	projectController.Route()
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/project/create", bytes.NewBufferString(`{}`))
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = req
+	ctx.Set("ADMIN", true)
+	projectController.CreateNewProject(ctx)
+	a.Equal(200, w.Code)
+	a.ProjectUc.AssertExpectations(a.T())
+}
+
+// Test Create Project Failed
+func (a *ProjectControllerTestSuite) TestCreateProjectController_Failed() {
+
+	a.ProjectUc.On("CreateNewProject", model.Project{}).Return(model.Project{}, errors.New("error"))
+	projectController := NewProjectController(a.ProjectUc, a.authMiddleware, a.rg)
+	projectController.Route()
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/project/create", bytes.NewBufferString(`{}`))
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = req
+	ctx.Set("ADMIN", true)
+	projectController.CreateNewProject(ctx)
+	a.Equal(500, w.Code)
+	a.ProjectUc.AssertExpectations(a.T())
+}
+
+// Test Get All Project Member
 
 func TestProjectControllerTestSuite(t *testing.T) {
 	suite.Run(t, new(ProjectControllerTestSuite))
